@@ -1,0 +1,95 @@
+{
+  "version": "skin-1.3",
+  "contexts": {
+    "STARSHIP": [
+      {
+        "label": "🚀 HANGAR ALPHA",
+        "title": "HANGAR ALPHA",
+        "color": "STELLAR",
+        "slots": {
+          "0": [
+            "NV_SHIP"
+          ]
+        }
+      },
+      {
+        "label": "🟨 S CLASS",
+        "title": "S CLASS",
+        "color": "TITLE_BRIGHT",
+        "slots": {
+          "0": [
+            "SCLASS"
+          ]
+        }
+      },
+      {
+        "label": "⛽ FUEL TANK",
+        "title": "FUEL TANK",
+        "color": "FUEL",
+        "slots": {
+          "0": [
+            "FUEL"
+          ]
+        }
+      }
+    ],
+    "FREIGHTER": [
+      {
+        "label": "📦 BAY 01",
+        "title": "BAY 01",
+        "color": "COMMODITY",
+        "slots": {
+          "0": [
+            "CARGO"
+          ]
+        }
+      },
+      {
+        "label": "💱 TRADE HUB",
+        "title": "TRADE HUB",
+        "color": "TRADE",
+        "slots": {
+          "1": [
+            "CARGO"
+          ]
+        }
+      }
+    ],
+    "MULTI-TOOL": [
+      {
+        "label": "🛠 LASER",
+        "title": "LASER",
+        "color": "TECHNOLOGY",
+        "slots": {
+          "0": [
+            "TECH1"
+          ]
+        }
+      }
+    ],
+    "EXOSUIT": [
+      {
+        "label": "⭐ FARM PACK",
+        "title": "FARM PACK",
+        "color": "GREEN",
+        "slots": {
+          "0": [
+            "FLORA"
+          ]
+        }
+      }
+    ],
+    "EXOCRAFT": [
+      {
+        "label": "🪐 ROVER ALPHA",
+        "title": "ROVER ALPHA",
+        "color": "EARTH",
+        "slots": {
+          "0": [
+            "PLANET"
+          ]
+        }
+      }
+    ]
+  }
+}

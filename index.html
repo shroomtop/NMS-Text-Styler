@@ -1,0 +1,2360 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<!--
+
+  NMS Name Styler — S420 PRIME // GOD-TIER + Instructions (Single-file, zero-deps, offline)
+
+  License: MIT
+
+  Notes:
+
+    • 100% offline. No external networks, no libraries, no fonts/CDNs.
+
+    • Real NMS-style chrome (rail/panels/scanlines), strict CSP, single HTML.
+
+    • Forward + Reverse parser (Angle <STYLE>…</> & Bracket [STYLE]…[//]), auto-convert both ways.
+
+    • Compatibility profiles (Ship / Multi-Tool / Freighter / Exosuit / Exocraft) adjust scope/spacing.
+
+    • Tabs with context-specific presets, favorites pinning, import/export preset packs.
+
+    • Multi-icon placement anywhere (slots between words + tail), drag & drop across slots, reorder.
+
+    • Hard 64 visible-char cap; live counters for visible vs total (incl. tags).
+
+    • Batch builder (pattern + {NN} autoincrement), clipboard export, shareable URL state.
+
+    • Diagnostics panel (SW, storage, clipboard, gamepad, perf), self-tests (round-trip, scope, syntax).
+
+    • PWA: Manifest (data:) + SW (blob:) inline. file:// works w/o SW (by design).
+
+    • Audio cues via WebAudio (offline), reduced-motion & mute respected.
+
+    • New in 1.2:
+
+        - CSP fixed for data: manifest & blob: SW + worker-src/manifest-src/base-uri.
+
+        - True “No color” option (preserved across saves).
+
+        - Share-link fix on file://.
+
+        - Dynamic preview color classes for ALL tokens (fallback hues).
+
+        - UX hint: game accepts bracket [ ] tags (Angle is for editing/round-trip).
+
+-->
+
+<head>
+
+  <meta charset="utf-8" />
+
+  <title>NMS Name Styler — S420 PRIME (GOD-TIER + Instructions)</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Strict single-file CSP (includes blob:/data: allowances for PWA bits) -->
+
+  <meta http-equiv="Content-Security-Policy" content="
+
+          default-src 'self';
+
+          img-src 'self' data:;
+
+          media-src 'self' data:;
+
+          style-src 'self' 'unsafe-inline';
+
+          script-src 'self' 'unsafe-inline' blob:;
+
+          worker-src 'self' blob:;
+
+          manifest-src 'self' data:;
+
+          font-src 'self' data:;
+
+          base-uri 'self'">
+
+  <meta name="color-scheme" content="dark" />
+
+  <style>
+    :root {
+      --bg0: #081018;
+      --bg1: #0b1220;
+      --bg2: #0c1528;
+      --panel: #0f1a2ab0;
+      --border: #264057;
+      --shadow: 0 10px 28px rgba(3, 10, 20, .45);
+      --rail: #ff9d00;
+      --railDim: #b36b00;
+      --muted: #93a6bb;
+      --white: #eaf2ff;
+      --accent: #3dd5ff;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --radius: 16px;
+      --gap: 12px;
+      --grid: 28px;
+      --scan: 3px;
+      --focus: #7db8ff;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      color: var(--white);
+      font: 14px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, ui-sans-serif;
+      background:
+        radial-gradient(1400px 900px at 15% -10%, rgba(61, 213, 255, .18), transparent 60%),
+        radial-gradient(1200px 700px at 85% 0%, rgba(255, 157, 0, .18), transparent 60%),
+        linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 50%, var(--bg2) 100%);
+      overflow-x: hidden;
+    }
+
+    body:before,
+    body:after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none
+    }
+
+    body:before {
+      opacity: .65;
+      background:
+        radial-gradient(2px 2px at 12% 22%, rgba(255, 255, 255, .35) 50%, transparent 51%),
+        radial-gradient(1.5px 1.5px at 72% 42%, rgba(255, 255, 255, .25) 50%, transparent 51%),
+        radial-gradient(1.5px 1.5px at 32% 82%, rgba(255, 255, 255, .18) 50%, transparent 51%)
+    }
+
+    body:after {
+      mix-blend-mode: overlay;
+      opacity: .05;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, .8) 1px, transparent 1px);
+      background-size: 100% var(--scan)
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 20px 16px 48px
+    }
+
+    /* HUD + Tabs */
+    .hud {
+      position: sticky;
+      top: 10px;
+      z-index: 20;
+      margin: 12px 10px 0;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      border: 1px solid #1f3446
+    }
+
+    .hud-bar {
+      background: linear-gradient(180deg, var(--rail) 0%, var(--railDim) 100%);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative
+    }
+
+    .hud-bar:after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #fff5, transparent)
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: #ff4d4f;
+      box-shadow: var(--shadow)
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 900
+    }
+
+    .title small {
+      color: #cbd7e6;
+      opacity: .85
+    }
+
+    .tabrail {
+      display: flex;
+      gap: 12px;
+      padding: 8px 10px;
+      background: #0d1a28e6;
+      border-top: 1px solid #21384e;
+      align-items: center
+    }
+
+    .tab {
+      border: 0;
+      background: none;
+      color: #aac0d6;
+      opacity: .65;
+      font-weight: 900;
+      letter-spacing: .6px;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 6px 2px
+    }
+
+    .tab[aria-selected="true"] {
+      color: #fff;
+      opacity: 1;
+      position: relative
+    }
+
+    .tab[aria-selected="true"]::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -9px;
+      height: 3px;
+      background: var(--rail)
+    }
+
+    .spacer {
+      flex: 1
+    }
+
+    .panel {
+      background: var(--panel);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden
+    }
+
+    .panel:before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: .08;
+      pointer-events: none;
+      background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px);
+      background-size: var(--grid) var(--grid)
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid #21384e
+    }
+
+    .panel-body {
+      padding: 16px
+    }
+
+    .grid {
+      display: grid;
+      gap: var(--gap)
+    }
+
+    @media(min-width:900px) {
+      .cols-2 {
+        grid-template-columns: 1fr 1fr
+      }
+
+      .cols-3 {
+        grid-template-columns: 1fr 1fr 1fr
+      }
+    }
+
+    label.small {
+      display: block;
+      font-size: 12px;
+      color: #cfe1f3;
+      opacity: .9;
+      font-weight: 800;
+      margin-bottom: 6px;
+      letter-spacing: .4px
+    }
+
+    input[type="text"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #2a435a;
+      outline: none;
+      background: #0a1625c0;
+      color: var(--white)
+    }
+
+    textarea {
+      min-height: 132px;
+      resize: vertical
+    }
+
+    .hint {
+      font-size: 11px;
+      color: #93a6bb
+    }
+
+    .btn {
+      border: 1px solid #2a435a;
+      background: #0b1828cc;
+      color: var(--white);
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-weight: 800;
+      letter-spacing: .2px;
+      cursor: pointer;
+      transition: transform .08s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .btn:active {
+      transform: scale(.98)
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px
+    }
+
+    .btn.primary {
+      background: linear-gradient(180deg, #44c7ff 0%, #1ea0db 100%);
+      border-color: #77dcff;
+      color: #052231
+    }
+
+    .btn.ghost {
+      background: #0b182850
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px
+    }
+
+    .chip {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      border: 1px solid #2a435a;
+      background: #0b1a2acc;
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-weight: 700
+    }
+
+    .chip button {
+      border: 0;
+      background: none;
+      color: #fff;
+      cursor: pointer
+    }
+
+    .chip[draggable="true"] {
+      user-select: none
+    }
+
+    .slots {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      overflow-x: auto;
+      border: 1px dashed #36536e;
+      border-radius: 12px;
+      background: #0b182850;
+      padding: 8px
+    }
+
+    .slot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px dashed #2a435a;
+      background: #0a162566;
+      border-radius: 10px;
+      padding: 4px 8px;
+      min-height: 36px
+    }
+
+    .slot.active {
+      outline: 2px dashed var(--focus)
+    }
+
+    .slot .add {
+      border: 1px solid #2a435a;
+      background: #0a1625aa;
+      border-radius: 10px;
+      padding: 2px 8px;
+      cursor: pointer
+    }
+
+    .word {
+      padding: 6px 8px;
+      border-radius: 10px;
+      background: #0c1b2f;
+      border: 1px solid #2a435a;
+      font-weight: 900
+    }
+
+    .preview {
+      min-height: 72px;
+      border-radius: 12px;
+      background: #0b18283a;
+      padding: 12px;
+      font-weight: 900;
+      letter-spacing: .2px
+    }
+
+    .scope {
+      outline: 2px dashed #7db8ff80;
+      outline-offset: 4px;
+      border-radius: 8px;
+      padding: 2px 4px
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 14px;
+      opacity: 0;
+      transition: opacity .25s
+    }
+
+    .toast .bubble {
+      border: 1px solid #a5b4fc40;
+      background: #44c7ffcc;
+      color: #021420;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 900
+    }
+
+    .kbd {
+      border: 1px solid #fff2;
+      padding: 1px 6px;
+      border-radius: 6px
+    }
+
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #475569 transparent
+    }
+
+    *::-webkit-scrollbar {
+      width: 10px;
+      height: 10px
+    }
+
+    *::-webkit-scrollbar-thumb {
+      background: #475569;
+      border: 3px solid transparent;
+      border-radius: 20px;
+      background-clip: padding-box
+    }
+
+    @media (max-width:420px) {
+      .actionbar {
+        position: sticky;
+        bottom: 8px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap
+      }
+
+      .btn {
+        flex: 1 1 auto
+      }
+    }
+  </style>
+
+  <!-- Data store -->
+
+  <script type="application/json" id="TOKENS">
+    {
+      "colors": [
+        "GREEN", "RED", "STELLAR", "FUEL", "TRADE", "TECHNOLOGY", "SPECIAL", "RARE",
+        "HIGHLIGHT", "MISSIONPRIMARY", "MISSIONSECOND", "FLORA", "METAL", "EARTH",
+        "POS_AVG", "NEU_AVG", "TITLE_BRIGHT", "STAT", "COMMODITY", "DISC_STAT", "VISOR",
+        "TRANS_TRA", "TRANS_WAR", "TRANS_EXP", "TRANS_DIP", "TRANS_ANM",
+        "PLAYER_00", "PLAYER_01", "PLAYER_02", "PLAYER_03", "PLAYER_04",
+        "PET0", "PET1", "PET2", "PET3", "PET4", "PET5", "EXPED", "DARK_TECH"
+      ],
+      "icons": [
+        "NV_SHIP", "CARGO", "FUEL", "STAR", "TRADE1", "TECH1", "UNITS", "PLANET", "CREATURE",
+        "HAZARD", "DOT", "CLOCK", "MISSIONSTART", "DIFFICULTY", "QUICKSILV", "BONES", "POWER", "GRID",
+        "INVSHIP", "INVTECH", "INVCARGO", "ICON_GOG", "ICON_PS", "ICON_STEAM", "ICON_XBL", "ICON_KBM",
+        "SCLASS", "ACLASS", "BCLASS", "CCLASS", "FLORA"
+      ],
+      "emoji": {
+        "NV_SHIP": "🚀",
+        "CARGO": "📦",
+        "FUEL": "⛽",
+        "STAR": "⭐",
+        "TRADE1": "💱",
+        "TECH1": "🛠️",
+        "UNITS": "💰",
+        "PLANET": "🪐",
+        "CREATURE": "🐾",
+        "HAZARD": "☣️",
+        "DOT": "•",
+        "CLOCK": "⏰",
+        "MISSIONSTART": "🎯",
+        "DIFFICULTY": "⚠️",
+        "QUICKSILV": "🪙",
+        "BONES": "🦴",
+        "POWER": "🔌",
+        "GRID": "#",
+        "INVSHIP": "🚀",
+        "INVTECH": "🔧",
+        "INVCARGO": "🎒",
+        "ICON_GOG": "🟢",
+        "ICON_PS": "🅿️",
+        "ICON_STEAM": "♨️",
+        "ICON_XBL": "🕹️",
+        "ICON_KBM": "⌨️",
+        "SCLASS": "🟨S",
+        "ACLASS": "🟩A",
+        "BCLASS": "🟦B",
+        "CCLASS": "🟫C",
+        "FLORA": "🌿"
+      },
+      "aliases": {
+        "SHIP": "NV_SHIP",
+        "KBM": "ICON_KBM",
+        "STEAM": "ICON_STEAM",
+        "PS": "ICON_PS",
+        "XBOX": "ICON_XBL"
+      }
+    }
+  </script>
+
+  <link rel="manifest" id="manifest-link">
+
+</head>
+
+<body>
+
+  <!-- HUD -->
+
+  <div class="hud">
+
+    <div class="hud-bar">
+
+      <div class="logo" aria-hidden="true">🔺</div>
+
+      <div class="title">
+
+        <h1>NMS Name Styler — S420 PRIME</h1>
+
+        <small id="contextLabel">Context: <strong>STARSHIP</strong></small>
+
+      </div>
+
+      <div style="margin-left:auto" class="hint">
+
+        Gamepad: <span class="kbd">LB/RB</span> tabs • <span class="kbd">A</span> select • <span class="kbd">B</span> back
+
+      </div>
+
+    </div>
+
+    <div class="tabrail" role="tablist" aria-label="Item categories">
+
+      <button class="tab" role="tab" id="tab-exosuit" data-tab="EXOSUIT" aria-controls="app-panels" aria-selected="false">EXOSUIT</button>
+
+      <button class="tab" role="tab" id="tab-starship" data-tab="STARSHIP" aria-controls="app-panels" aria-selected="true">STARSHIP</button>
+
+      <button class="tab" role="tab" id="tab-mtool" data-tab="MULTI-TOOL" aria-controls="app-panels" aria-selected="false">MULTI-TOOL</button>
+
+      <button class="tab" role="tab" id="tab-exocraft" data-tab="EXOCRAFT" aria-controls="app-panels" aria-selected="false">EXOCRAFT</button>
+
+      <button class="tab" role="tab" id="tab-freighter" data-tab="FREIGHTER" aria-controls="app-panels" aria-selected="false">FREIGHTER</button>
+
+      <div class="spacer"></div>
+
+      <a class="btn ghost" id="supportLink" href="https://buymeacoffee.com/shroomtop420" target="_blank" rel="noopener">☕ Support</a>
+
+    </div>
+
+  </div>
+
+  <main class="wrap" id="app-panels" role="tabpanel" aria-labelledby="tab-starship">
+
+    <!-- Composer -->
+
+    <section class="panel" role="region" aria-labelledby="compose-title">
+
+      <div class="panel-header">
+
+        <strong id="compose-title">Composer — <span id="panelContext">STARSHIP</span></strong>
+
+        <div class="hint">Profiles refine scope/spacing for in-game text boxes.</div>
+
+      </div>
+
+      <div class="panel-body">
+
+        <div class="grid cols-3">
+
+          <div style="grid-column:1/-1">
+
+            <label for="title" class="small">Visible Name (hard limit: 64 characters)</label>
+
+            <input id="title" type="text" placeholder="e.g., HANGAR ALPHA" maxlength="64" aria-describedby="count titleHelp" />
+
+            <div class="grid" style="grid-template-columns:1fr auto auto; gap:8px; margin-top:6px">
+
+              <div id="titleHelp" class="hint" style="color:var(--ok);font-weight:800">Within limit</div>
+
+              <div id="count" class="hint">0 / 64</div>
+
+              <div id="tagCount" class="hint">total: 0</div>
+
+            </div>
+
+          </div>
+
+          <div>
+
+            <label class="small" for="profile">Target UI Profile</label>
+
+            <select id="profile" aria-label="Target UI">
+
+              <option value="STARSHIP" selected>Starship</option>
+
+              <option value="MULTI-TOOL">Multi-Tool</option>
+
+              <option value="FREIGHTER">Freighter</option>
+
+              <option value="EXOSUIT">Exosuit</option>
+
+              <option value="EXOCRAFT">Exocraft</option>
+
+            </select>
+
+          </div>
+
+          <div>
+
+            <label class="small" for="color">Color Style</label>
+
+            <select id="color" aria-label="Color style select"></select>
+
+          </div>
+
+          <div class="grid">
+
+            <label class="small">Behavior</label>
+
+            <div class="grid" style="grid-template-columns:auto 1fr; gap:10px">
+
+              <label class="hint" style="display:flex;align-items:center;gap:8px">
+
+                <input id="colorIcon" type="checkbox" checked />
+
+                <span>Color applies to icons</span>
+
+              </label>
+
+              <div class="hint" style="display:flex;gap:12px">
+
+                <label style="display:flex;gap:6px;align-items:center">
+
+                  <input type="radio" name="syntax" value="angle" />
+
+                  <span>&lt;STYLE&gt;Text&lt;/&gt;</span>
+
+                </label>
+
+                <label style="display:flex;gap:6px;align-items:center">
+
+                  <input type="radio" name="syntax" value="bracket" checked />
+
+                  <span>[STYLE]Text[//]</span>
+
+                </label>
+
+              </div>
+
+              <div class="hint" style="grid-column:1/-1;margin-top:4px">
+
+                Game accepts <b>bracket</b> tags in the textbox. Angle tags are for editing/round-trip. Use <b>Convert Syntax</b> if needed.
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <div style="grid-column:1/-1">
+
+            <label class="small">Icon Placement (tap “＋” to add icons between words; drag chips between slots)</label>
+
+            <div id="placeRow" class="slots" aria-live="polite"></div>
+
+            <div class="hint">Slots appear before the first word, between words, and after the last word.</div>
+
+          </div>
+
+        </div>
+
+        <div class="actionbar" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+
+          <button id="copyBtn" class="btn primary">Copy Raw</button>
+
+          <button id="clearBtn" class="btn">Clear</button>
+
+          <button id="shareBtn" class="btn ghost">Share Link</button>
+
+          <button id="exportBtn" class="btn ghost">Export JSON</button>
+
+          <button id="importBtn" class="btn ghost">Import JSON</button>
+
+          <button id="muteBtn" class="btn ghost" aria-pressed="false">🔈 Sound</button>
+
+          <div class="hint">If tags render literally in-game, switch syntax above.</div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- Preview & Output -->
+
+    <section class="grid cols-2" style="margin-top:14px">
+
+      <div class="panel" role="region" aria-labelledby="preview-title">
+
+        <div class="panel-header">
+
+          <strong id="preview-title">Rendered Preview (approximation)</strong>
+
+          <span class="hint">Outlined area = colored scope</span>
+
+        </div>
+
+        <div class="panel-body">
+
+          <div id="preview" class="preview" aria-live="polite"></div>
+
+          <div id="scopeNote" class="hint" style="margin-top:6px"></div>
+
+        </div>
+
+      </div>
+
+      <div class="panel" role="region" aria-labelledby="raw-title">
+
+        <div class="panel-header">
+
+          <strong id="raw-title">Raw Tag String</strong>
+
+          <div style="display:flex;gap:8px;align-items:center">
+
+            <button id="copyBtn2" class="btn primary">Copy</button>
+
+            <button id="convertBtn" class="btn">Convert Syntax</button>
+
+          </div>
+
+        </div>
+
+        <div class="panel-body">
+
+          <textarea id="raw" readonly aria-label="Raw tag output"></textarea>
+
+          <div class="grid cols-2" style="margin-top:8px">
+
+            <div>
+
+              <label class="small" for="rawIn">Parse Existing (paste raw string)</label>
+
+              <textarea id="rawIn" placeholder="[STELLAR][I_IMG:NV_SHIP]HANGAR ALPHA[//]"></textarea>
+
+              <div style="display:flex;gap:8px;margin-top:8px">
+
+                <button id="parseBtn" class="btn">Parse → UI</button>
+
+                <button id="resetBtn" class="btn ghost">Reset</button>
+
+              </div>
+
+            </div>
+
+            <div>
+
+              <label class="small" for="compat">Compatibility Notes</label>
+
+              <textarea id="compat" readonly>
+
+Profiles adjust:
+
+• Starship/Multi-Tool: safe spaces; tail icons recommended inside scope when colorIcon=OFF.
+
+• Freighter: UI truncates trailing spaces; we auto-trim space before [//] in bracket mode.
+
+• Exosuit/Exocraft: behave like Starship; emoji width varies by platform/OS.
+
+              </textarea>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- Presets -->
+
+    <section class="panel" style="margin-top:14px">
+
+      <div class="panel-header">
+
+        <strong>Context Presets</strong>
+
+        <span class="hint">Best-fit examples for the active tab • Pin favorites ⭐</span>
+
+      </div>
+
+      <div id="presetContainer" class="panel-body" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+
+    </section>
+
+    <!-- Batch + Packs + Tests -->
+
+    <section class="panel" style="margin-top:14px">
+
+      <div class="panel-header">
+
+        <strong>Batch / Packs / Tests</strong>
+
+        <span class="hint">Generate many names • Import packs • Run self-tests</span>
+
+      </div>
+
+      <div class="panel-body">
+
+        <div class="grid cols-3">
+
+          <div>
+
+            <label class="small">Batch Pattern (uses current color/syntax/icons)</label>
+
+            <input id="batchPattern" type="text" placeholder="e.g., DOCK {NN}" />
+
+            <div class="grid" style="grid-template-columns:1fr auto;gap:8px;margin-top:8px">
+
+              <input id="batchCount" type="number" min="1" max="99" value="5" />
+
+              <button id="batchRun" class="btn">Build</button>
+
+            </div>
+
+            <textarea id="batchOut" readonly style="margin-top:8px" placeholder="Results will appear here"></textarea>
+
+            <button id="batchCopy" class="btn" style="margin-top:8px">Copy All</button>
+
+          </div>
+
+          <div>
+
+            <label class="small">Preset Packs (JSON)</label>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+
+              <button id="packExport" class="btn">Export Current Pack</button>
+
+              <button id="packImport" class="btn">Import Pack</button>
+
+              <button id="favClear" class="btn ghost">Clear Favorites</button>
+
+            </div>
+
+            <textarea id="packInfo" readonly style="margin-top:8px" placeholder="Pack info & merge results"></textarea>
+
+          </div>
+
+          <div>
+
+            <label class="small">Self-Tests</label>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+
+              <button id="testRun" class="btn">Run Tests</button>
+
+              <button id="diagBtn" class="btn ghost">Diagnostics</button>
+
+            </div>
+
+            <textarea id="testOut" readonly style="margin-top:8px" placeholder="Test results"></textarea>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- Instructions -->
+
+    <section class="panel" style="margin-top:14px">
+
+      <div class="panel-header">
+
+        <strong>Instructions & Xbox Remote Keyboard</strong>
+
+        <div style="display:flex;gap:8px;align-items:center">
+
+          <button id="copyHelp" class="btn ghost">Copy Steps</button>
+
+          <a class="btn" href="https://buymeacoffee.com/shroomtop420" target="_blank" rel="noopener">☕ Buy Me a Coffee</a>
+
+        </div>
+
+      </div>
+
+      <div class="panel-body">
+
+        <div id="helpText" class="grid">
+
+          <div>
+
+            <label class="small">Quick Start</label>
+
+            <ul class="hint" style="margin:6px 0 0 16px">
+
+              <li>Type your <b>Visible Name</b> (max 64 characters).</li>
+
+              <li>Select a <b>Color Style</b> or choose <b>— None —</b>, then choose <b>Bracket</b> syntax.</li>
+
+              <li>Tap “＋” to add <b>icons</b> before/between/after words. Drag chips to reorder.</li>
+
+              <li>Toggle <b>Color applies to icons</b> to include/exclude icons from the color scope.</li>
+
+              <li>Pick a <b>Target UI Profile</b> (Starship, Multi-Tool, Freighter, …).</li>
+
+              <li>Click <b>Copy Raw</b>, then paste into the game’s rename textbox.</li>
+
+            </ul>
+
+          </div>
+
+          <div>
+
+            <label class="small">Xbox App — Remote Keyboard Paste</label>
+
+            <ol class="hint" style="margin:6px 0 0 16px">
+
+              <li>Open the <b>Xbox app</b> on phone/PC and sign in.</li>
+
+              <li>Connect to your console (Remote Control or Remote Play).</li>
+
+              <li>In <b>No Man’s Sky</b>, focus the rename textbox (ship/multi-tool/freighter/etc.).</li>
+
+              <li>In the Xbox app, open the <b>keyboard</b> (keyboard icon).</li>
+
+              <li><b>Paste</b> the copied tag string (long-press → Paste on mobile; Ctrl/Cmd+V on desktop).</li>
+
+              <li>If you see literal tags, switch syntax (Angle ↔ Bracket) via <b>Convert Syntax</b> and try again.</li>
+
+            </ol>
+
+          </div>
+
+          <div>
+
+            <label class="small">Troubleshooting</label>
+
+            <ul class="hint" style="margin:6px 0 0 16px">
+
+              <li><b>Freighter</b> trims trailing spaces — the app auto-trims before <code>[//]</code> in Bracket mode.</li>
+
+              <li>Icons not colored? Turn <b>Color applies to icons</b> ON, or use Angle syntax while editing then convert.</li>
+
+              <li>Wrong length? Counter shows <b>visible</b> vs <b>total</b> (with tags). Keep visible ≤ 64.</li>
+
+              <li>Odd emoji widths? Prefer icon tags over emoji for consistency.</li>
+
+              <li>Paste your existing string into <b>Parse Existing</b> to reconstruct slots and tweak.</li>
+
+            </ul>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Icon Picker -->
+
+  <dialog id="iconDialog" class="panel" style="padding:0">
+
+    <form method="dialog">
+
+      <div class="panel-header"><strong>Pick Icons for Slot <span id="slotLabel" style="color:#a5c8ff"></span></strong><span class="hint">Tap to toggle (0–8) • Drag chips between slots outside</span></div>
+
+      <div class="panel-body">
+
+        <div id="iconGrid" style="display:flex;gap:10px;flex-wrap:wrap;max-height:55vh;overflow:auto;padding-right:6px"></div>
+
+        <div style="display:flex;justify-content:space-between;gap:10px;margin-top:12px">
+
+          <button id="slotClear" type="button" class="btn">Clear Slot</button>
+
+          <div style="display:flex;gap:10px">
+
+            <button value="cancel" class="btn">Close</button>
+
+            <button id="iconApply" value="default" class="btn primary">Apply</button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </form>
+
+  </dialog>
+
+  <!-- Toast -->
+
+  <div id="toast" class="toast">
+    <div class="bubble">Copied</div>
+  </div>
+
+  <script>
+    /***********************
+
+   * Core Data & Helpers *
+
+   ***********************/
+    const APP_VER = 'gdt-1.2';
+    const $ = id => document.getElementById(id);
+    const el = {
+      title: $('title'),
+      count: $('count'),
+      tagCount: $('tagCount'),
+      warn: $('titleHelp'),
+      profile: $('profile'),
+      color: $('color'),
+      colorIcon: $('colorIcon'),
+      placeRow: $('placeRow'),
+      preview: $('preview'),
+      scopeNote: $('scopeNote'),
+      raw: $('raw'),
+      rawIn: $('rawIn'),
+      parseBtn: $('parseBtn'),
+      resetBtn: $('resetBtn'),
+      convertBtn: $('convertBtn'),
+      copyBtn: $('copyBtn'),
+      copyBtn2: $('copyBtn2'),
+      clearBtn: $('clearBtn'),
+      iconDialog: $('iconDialog'),
+      iconGrid: $('iconGrid'),
+      iconApply: $('iconApply'),
+      slotLabel: $('slotLabel'),
+      slotClear: $('slotClear'),
+      shareBtn: $('shareBtn'),
+      exportBtn: $('exportBtn'),
+      importBtn: $('importBtn'),
+      muteBtn: $('muteBtn'),
+      contextLabel: $('contextLabel'),
+      panelContext: $('panelContext'),
+      tabs: [...document.querySelectorAll('.tab')],
+      toast: $('toast'),
+      presetContainer: $('presetContainer'),
+      batchPattern: $('batchPattern'),
+      batchCount: $('batchCount'),
+      batchRun: $('batchRun'),
+      batchOut: $('batchOut'),
+      batchCopy: $('batchCopy'),
+      packExport: $('packExport'),
+      packImport: $('packImport'),
+      packInfo: $('packInfo'),
+      favClear: $('favClear'),
+      testRun: $('testRun'),
+      testOut: $('testOut'),
+      diagBtn: $('diagBtn'),
+      copyHelp: $('copyHelp'),
+      helpText: $('helpText')
+    };
+    const TOKENS = JSON.parse(document.getElementById('TOKENS').textContent);
+    const COLORS = TOKENS.colors,
+      ICONS = TOKENS.icons,
+      EMOJI = TOKENS.emoji,
+      ALIASES = TOKENS.aliases;
+    const MAX_VISIBLE = 64,
+      LS_KEY = 'nms_god_state_v3';
+    let iconsBySlot = [];
+    let currentSlot = 0;
+    let context = 'STARSHIP';
+    let favorites = JSON.parse(localStorage.getItem('nms_favs') || '{}'); // {context: [labels]}
+    let muted = false;
+    const sanitize = s => (s || "").replace(/[\[\]<>]/g, "").replace(/\s+/g, " ").trim().slice(0, MAX_VISIBLE);
+    const wordsOf = s => {
+      const t = sanitize(s);
+      return t ? t.split(' ') : []
+    };
+    const syntax = () => document.querySelector('input[name="syntax"]:checked').value; // angle|bracket
+    const toast = msg => {
+      if (msg) el.toast.querySelector('.bubble').textContent = msg;
+      el.toast.style.opacity = 1;
+      setTimeout(() => el.toast.style.opacity = 0, 900);
+    };
+    /****************
+
+     * Dynamic preview colors for ALL tokens
+
+     ****************/
+    const COLOR_PREVIEW_MAP = {
+      GREEN: "#22c55e",
+      RED: "#ef4444",
+      STELLAR: "#facc15",
+      FUEL: "#f59e0b",
+      TRADE: "#10b981",
+      TECHNOLOGY: "#818cf8",
+      SPECIAL: "#f472b6",
+      RARE: "#e879f9",
+      HIGHLIGHT: "#67e8f9",
+      MISSIONPRIMARY: "#fb923c",
+      MISSIONSECOND: "#14b8a6",
+      FLORA: "#86efac",
+      METAL: "#d1d5db",
+      EARTH: "#b45309",
+      POS_AVG: "#6ee7b7",
+      NEU_AVG: "#94a3b8",
+      TITLE_BRIGHT: "#ffffff",
+      STAT: "#e5e7eb",
+      COMMODITY: "#fcd34d",
+      DISC_STAT: "#7dd3fc",
+      VISOR: "#a3e635",
+      DARK_TECH: "#93c5fd"
+    };
+
+    function hslFromString(s) {
+      let h = 0;
+      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+      return `hsl(${h%360} 80% 65%)`;
+    }
+    (function ensureColorClasses() {
+      const st = document.createElement('style');
+      let css = "";
+      COLORS.forEach(c => {
+        const col = COLOR_PREVIEW_MAP[c] || hslFromString(c);
+        css += `.c-${c}{color:${col}}`;
+      });
+      st.textContent = css;
+      document.head.appendChild(st);
+    })();
+    /****************
+
+     * Audio (WebAudio)
+
+     ****************/
+    let audioCtx = null;
+
+    function ping(type = 'ok') {
+      if (muted || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      audioCtx = audioCtx || new(window.AudioContext || window.webkitAudioContext)();
+      const o = audioCtx.createOscillator(),
+        g = audioCtx.createGain();
+      o.type = 'triangle';
+      const now = audioCtx.currentTime;
+      if (type === 'ok') o.frequency.setValueAtTime(740, now);
+      if (type === 'nav') o.frequency.setValueAtTime(540, now);
+      if (type === 'bad') o.frequency.setValueAtTime(220, now);
+      g.gain.setValueAtTime(.001, now);
+      g.gain.linearRampToValueAtTime(.06, now + .02);
+      g.gain.exponentialRampToValueAtTime(.0001, now + .2);
+      o.connect(g).connect(audioCtx.destination);
+      o.start();
+      o.stop(now + .22);
+    }
+    /****************
+
+     * PWA (https/localhost only) — data: manifest + blob: SW, PNG icons via canvas
+
+     ****************/
+    (function pwa() {
+      // Build PNG icons on the fly to please Android installers
+      function makeIcon(size) {
+        const c = document.createElement('canvas');
+        c.width = size;
+        c.height = size;
+        const x = c.getContext('2d');
+        x.fillStyle = "#0b1220";
+        x.fillRect(0, 0, size, size);
+        x.fillStyle = "#ffd08a"; // triangle
+        x.beginPath();
+        x.moveTo(size * 0.5, size * 0.22);
+        x.lineTo(size * 0.75, size * 0.7);
+        x.lineTo(size * 0.25, size * 0.7);
+        x.closePath();
+        x.fill();
+        return c.toDataURL('image/png');
+      }
+      const manifest = {
+        name: "NMS Name Styler — S420 PRIME",
+        short_name: "NMS Styler",
+        start_url: ".",
+        display: "standalone",
+        background_color: "#0b1220",
+        theme_color: "#0b1220",
+        icons: [{
+            src: makeIcon(192),
+            sizes: "192x192",
+            type: "image/png"
+          },
+          {
+            src: makeIcon(512),
+            sizes: "512x512",
+            type: "image/png"
+          }
+        ]
+      };
+      document.getElementById('manifest-link').setAttribute('href', "data:application/manifest+json," + encodeURIComponent(JSON.stringify(manifest)));
+      if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+        const code = `const C='nms-${APP_VER}';
+
+      self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(['./']))));
+
+      self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k))))));
+
+      self.addEventListener('fetch',e=>{
+
+        const u=new URL(e.request.url);
+
+        if(u.origin===location.origin){
+
+          e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{caches.open(C).then(c=>c.put(e.request,res.clone()));return res}).catch(()=>caches.match('./'))));
+
+        }
+
+      });`;
+        const sw = URL.createObjectURL(new Blob([code], {
+          type: 'text/javascript'
+        }));
+        navigator.serviceWorker.register(sw).catch(() => {});
+      }
+    })();
+    /****************
+
+     * Context Presets
+
+     ****************/
+    const PRESETS = {
+      "EXOSUIT": [{
+          label: "⭐ FARM PACK",
+          title: "FARM PACK",
+          color: "GREEN",
+          slots: {
+            "0": ["FLORA"]
+          }
+        },
+        {
+          label: "⚠ HAZARD KIT",
+          title: "HAZARD KIT",
+          color: "HIGHLIGHT",
+          slots: {
+            "0": ["HAZARD"]
+          }
+        },
+        {
+          label: "🛠 TECH SLOT",
+          title: "TECH SLOT",
+          color: "TECHNOLOGY",
+          slots: {
+            "0": ["INVTECH"]
+          }
+        },
+        {
+          label: "💰 UNITS WALLET",
+          title: "UNITS WALLET",
+          color: "TRADE",
+          slots: {
+            "0": ["UNITS"]
+          }
+        },
+        {
+          label: "🎒 CARGO BAG",
+          title: "CARGO BAG",
+          color: "COMMODITY",
+          slots: {
+            "0": ["INVCARGO"]
+          }
+        },
+        {
+          label: "🔌 POWER CORE",
+          title: "POWER CORE",
+          color: "SPECIAL",
+          slots: {
+            "0": ["POWER"]
+          }
+        }
+      ],
+      "STARSHIP": [{
+          label: "🚀 HANGAR ALPHA",
+          title: "HANGAR ALPHA",
+          color: "STELLAR",
+          slots: {
+            "0": ["NV_SHIP"]
+          }
+        },
+        {
+          label: "🟨 S CLASS",
+          title: "S CLASS",
+          color: "TITLE_BRIGHT",
+          slots: {
+            "0": ["SCLASS"]
+          }
+        },
+        {
+          label: "⛽ FUEL TANK",
+          title: "FUEL TANK",
+          color: "FUEL",
+          slots: {
+            "0": ["FUEL"]
+          }
+        },
+        {
+          label: "📦 HAULER",
+          title: "HAULER",
+          color: "TRADE",
+          slots: {
+            "0": ["CARGO"]
+          }
+        },
+        {
+          label: "🛠 HYPERDRIVE",
+          title: "HYPERDRIVE",
+          color: "TECHNOLOGY",
+          slots: {
+            "0": ["TECH1"]
+          }
+        },
+        {
+          label: "⭐ EXPLORER",
+          title: "EXPLORER",
+          color: "STELLAR",
+          slots: {
+            "0": ["STAR"]
+          }
+        }
+      ],
+      "MULTI-TOOL": [{
+          label: "🛠 LASER",
+          title: "LASER",
+          color: "TECHNOLOGY",
+          slots: {
+            "0": ["TECH1"]
+          }
+        },
+        {
+          label: "☣ HAZARD CUTTER",
+          title: "HAZARD CUTTER",
+          color: "HIGHLIGHT",
+          slots: {
+            "0": ["HAZARD"]
+          }
+        },
+        {
+          label: "🐾 CREATURE SCAN",
+          title: "CREATURE SCAN",
+          color: "VISOR",
+          slots: {
+            "0": ["CREATURE"]
+          }
+        },
+        {
+          label: "🔧 POWER DRILL",
+          title: "POWER DRILL",
+          color: "METAL",
+          slots: {
+            "0": ["POWER"]
+          }
+        },
+        {
+          label: "🟨 S CLASS SCANNER",
+          title: "S CLASS SCANNER",
+          color: "TITLE_BRIGHT",
+          slots: {
+            "0": ["SCLASS"]
+          }
+        }
+      ],
+      "EXOCRAFT": [{
+          label: "🔌 ENGINE",
+          title: "ENGINE",
+          color: "FUEL",
+          slots: {
+            "0": ["POWER"]
+          }
+        },
+        {
+          label: "🎒 CARGO BED",
+          title: "CARGO BED",
+          color: "COMMODITY",
+          slots: {
+            "0": ["INVCARGO"]
+          }
+        },
+        {
+          label: "🪐 ROVER ALPHA",
+          title: "ROVER ALPHA",
+          color: "EARTH",
+          slots: {
+            "0": ["PLANET"]
+          }
+        },
+        {
+          label: "🛠 SUSPENSION",
+          title: "SUSPENSION",
+          color: "TECHNOLOGY",
+          slots: {
+            "0": ["TECH1"]
+          }
+        },
+        {
+          label: "⛽ FUEL RACK",
+          title: "FUEL RACK",
+          color: "FUEL",
+          slots: {
+            "0": ["FUEL"]
+          }
+        }
+      ],
+      "FREIGHTER": [{
+          label: "📦 BAY 01",
+          title: "BAY 01",
+          color: "COMMODITY",
+          slots: {
+            "0": ["CARGO"]
+          }
+        },
+        {
+          label: "💱 TRADE HUB",
+          title: "TRADE HUB",
+          color: "TRADE",
+          slots: {
+            "1": ["CARGO"]
+          }
+        },
+        {
+          label: "🔌 ENGINE ROOM",
+          title: "ENGINE ROOM",
+          color: "FUEL",
+          slots: {
+            "0": ["POWER"]
+          }
+        },
+        {
+          label: "🔧 TECH DECK",
+          title: "TECH DECK",
+          color: "TECHNOLOGY",
+          slots: {
+            "0": ["INVTECH"]
+          }
+        },
+        {
+          label: "⭐ BRIDGE",
+          title: "BRIDGE",
+          color: "STELLAR",
+          slots: {
+            "0": ["STAR"]
+          }
+        },
+        {
+          label: "💰 UNITS BANK",
+          title: "UNITS BANK",
+          color: "TRADE",
+          slots: {
+            "0": ["UNITS"]
+          }
+        },
+        {
+          label: "🎒 CARGO HOLD",
+          title: "CARGO HOLD",
+          color: "COMMODITY",
+          slots: {
+            "0": ["INVCARGO"],
+            "LAST": ["CARGO"]
+          }
+        }
+      ]
+    };
+
+    function ensureSlots(n) {
+      const prev = iconsBySlot.slice();
+      iconsBySlot.length = 0;
+      for (let i = 0; i < n; i++) iconsBySlot[i] = prev[i] ? prev[i].slice(0, 8) : []
+    }
+
+    function fillColor() {
+      el.color.innerHTML = '<option value="">— None —</option>';
+      COLORS.forEach(v => {
+        const o = document.createElement('option');
+        o.value = v;
+        o.textContent = v;
+        el.color.appendChild(o);
+      });
+    }
+    /****************
+
+     * Placement UI + Drag & Drop
+
+     ****************/
+    function renderPlacement() {
+      const words = wordsOf(el.title.value);
+      ensureSlots(words.length + 1);
+      el.placeRow.innerHTML = "";
+      for (let i = 0; i < iconsBySlot.length; i++) {
+        const slot = document.createElement('div');
+        slot.className = "slot";
+        slot.dataset.idx = i;
+        slot.ondragover = e => {
+          e.preventDefault();
+          slot.classList.add('active');
+        };
+        slot.ondragleave = () => slot.classList.remove('active');
+        slot.ondrop = e => {
+          e.preventDefault();
+          slot.classList.remove('active');
+          const tok = e.dataTransfer.getData('text/plain');
+          const fromIdx = +e.dataTransfer.getData('slot');
+          const chipIdx = +e.dataTransfer.getData('chip');
+          if (!tok || Number.isNaN(fromIdx)) return;
+          iconsBySlot[fromIdx].splice(chipIdx, 1);
+          if (!iconsBySlot[i]) iconsBySlot[i] = [];
+          if (iconsBySlot[i].length < 8) iconsBySlot[i].push(tok);
+          renderPlacement();
+          render();
+          save();
+          ping('ok');
+        };
+        const add = document.createElement('button');
+        add.className = "add";
+        add.type = "button";
+        add.textContent = "＋";
+        add.title = `Add icons to slot ${i}`;
+        add.onclick = () => openIconDialog(i);
+        slot.appendChild(add);
+        const chips = document.createElement('div');
+        chips.className = "chips";
+        (iconsBySlot[i] || []).forEach((tok, idx) => {
+          const chip = document.createElement('span');
+          chip.className = "chip";
+          chip.draggable = true;
+          chip.innerHTML = `<span>${EMOJI[tok]||"🔖"}</span><span>${tok}</span>`;
+          chip.ondragstart = e => {
+            e.dataTransfer.setData('text/plain', tok);
+            e.dataTransfer.setData('slot', i);
+            e.dataTransfer.setData('chip', idx);
+          };
+          const x = document.createElement('button');
+          x.textContent = "✕";
+          x.onclick = () => {
+            iconsBySlot[i].splice(idx, 1);
+            renderPlacement();
+            render();
+            save();
+            ping('nav');
+          };
+          chip.appendChild(x);
+          chips.appendChild(chip);
+        });
+        slot.appendChild(chips);
+        el.placeRow.appendChild(slot);
+        if (i < words.length) {
+          const w = document.createElement('span');
+          w.className = "word";
+          w.textContent = words[i];
+          el.placeRow.appendChild(w);
+        }
+      }
+    }
+
+    function openIconDialog(i) {
+      currentSlot = i;
+      $('slotLabel').textContent = "#" + i;
+      buildIconGrid(i);
+      el.iconDialog.showModal();
+    }
+
+    function buildIconGrid(i) {
+      el.iconGrid.innerHTML = "";
+      const set = new Set(iconsBySlot[i] || []);
+      ICONS.forEach(tok => {
+        const b = document.createElement('button');
+        b.type = "button";
+        b.className = "btn";
+        const active = set.has(tok);
+        b.style.background = active ? "#284a78" : "#0b1828cc";
+        b.style.borderColor = active ? "#7db8ff" : "#2a435a";
+        b.textContent = `${EMOJI[tok]||"🔖"} ${tok}`;
+        b.onclick = () => {
+          const arr = iconsBySlot[i];
+          const idx = arr.indexOf(tok);
+          if (idx > -1) arr.splice(idx, 1);
+          else if (arr.length < 8) arr.push(tok);
+          buildIconGrid(i);
+          renderPlacement();
+          render();
+          save();
+          ping('nav');
+        };
+        el.iconGrid.appendChild(b);
+      });
+      el.slotClear.onclick = () => {
+        iconsBySlot[i] = [];
+        buildIconGrid(i);
+        renderPlacement();
+        render();
+        save();
+      };
+    }
+    /****************
+
+     * Tag Engine v2 (build & parse)
+
+     ****************/
+    function profileRules() {
+      const p = el.profile.value;
+      return {
+        trimCloseSpace: (p === 'FREIGHTER'),
+        tailInsideWhenNoColorIcon: (p !== 'FREIGHTER')
+      };
+    }
+
+    function buildRaw() {
+      const t = sanitize(el.title.value);
+      if (!t) return "";
+      const rules = profileRules();
+      const words = t.split(' '),
+        angle = syntax() === 'angle',
+        hasColor = !!el.color.value;
+      const open = hasColor ? (angle ? `<${el.color.value}>` : `[${el.color.value}]`) : "";
+      const close = hasColor ? (angle ? `</>` : `[//]`) : "";
+      const icon = tok => angle ? `<IMG>${tok}<>` : `[I_IMG:${tok}]`;
+      let out = "";
+      if (el.colorIcon.checked) {
+        if (hasColor) out += open;
+        for (let i = 0; i < iconsBySlot.length; i++) {
+          out += (iconsBySlot[i] || []).map(icon).join('');
+          if (i < words.length) {
+            out += words[i];
+            if (i < words.length - 1) out += ' ';
+          }
+        }
+        if (hasColor) out += close;
+      } else {
+        const tail = iconsBySlot[iconsBySlot.length - 1] || [];
+        for (let i = 0; i < iconsBySlot.length; i++) {
+          if (i < words.length) {
+            out += (iconsBySlot[i] || []).map(icon).join('');
+            if (i === words.length - 1) {
+              const insideTail = tail.map(icon).join('');
+              if (hasColor) {
+                out += rules.tailInsideWhenNoColorIcon ? (open + words[i] + insideTail + close) : (open + words[i] + close + insideTail);
+              } else {
+                out += words[i] + insideTail;
+              }
+            } else {
+              out += hasColor ? (open + words[i] + close) : words[i];
+              out += ' ';
+            }
+          }
+        }
+      }
+      if (rules.trimCloseSpace && syntax() === 'bracket') out = out.replace(/\s+\[\/\/\]$/, '[//]');
+      return out;
+    }
+
+    function parseRaw(str) {
+      if (!str) return null;
+      let s = str.trim();
+      const isBracket = /\[.*?\]/.test(s) && !/<.*?>/.test(s);
+      const isAngle = /<.*?>/.test(s) && !/\[.*?\]/.test(s);
+      let mode = isAngle ? 'angle' : 'bracket';
+      // normalize icon aliases in-stream
+      Object.keys(ALIASES).forEach(k => {
+        const v = ALIASES[k];
+        const rx = mode === 'bracket' ? new RegExp(`\\[I_IMG:${k}\\]`, 'g') : new RegExp(`<IMG>${k}<>`, 'g');
+        s = s.replace(rx, mode === 'bracket' ? `[I_IMG:${v}]` : `<IMG>${v}<>`);
+      });
+      const tokens = [];
+      if (mode === 'bracket') {
+        const re = /(\[I_IMG:([A-Z0-9_]+)\]|\[([A-Z0-9_]+)\]|\[\/\/\])/g;
+        let m, last = 0;
+        while ((m = re.exec(s))) {
+          if (m.index > last) tokens.push({
+            t: 'text',
+            v: s.slice(last, m.index)
+          });
+          if (m[2]) tokens.push({
+            t: 'icon',
+            v: m[2]
+          });
+          else if (m[3]) tokens.push({
+            t: 'open',
+            v: m[3]
+          });
+          else tokens.push({
+            t: 'close'
+          });
+          last = re.lastIndex;
+        }
+        if (last < s.length) tokens.push({
+          t: 'text',
+          v: s.slice(last)
+        });
+      } else {
+        const re = /(<IMG>([A-Z0-9_]+)<>|<([A-Z0-9_]+)>|<\/>)/g;
+        let m, last = 0;
+        while ((m = re.exec(s))) {
+          if (m.index > last) tokens.push({
+            t: 'text',
+            v: s.slice(last, m.index)
+          });
+          if (m[2]) tokens.push({
+            t: 'icon',
+            v: m[2]
+          });
+          else if (m[3]) tokens.push({
+            t: 'open',
+            v: m[3]
+          });
+          else tokens.push({
+            t: 'close'
+          });
+          last = re.lastIndex;
+        }
+        if (last < s.length) tokens.push({
+          t: 'text',
+          v: s.slice(last)
+        });
+      }
+      let color = "",
+        stack = 0,
+        words = [],
+        slots = [
+          []
+        ],
+        seenIconInside = false,
+        seenIconOutside = false;
+      const pushWord = w => {
+        if (!w) return;
+        w.split(/\s+/).forEach(part => {
+          if (part) {
+            words.push(part);
+            slots.push([]);
+          }
+        });
+      };
+      let buffer = "";
+      tokens.forEach(tok => {
+        if (tok.t === 'open') {
+          color = tok.v;
+          stack++;
+        } else if (tok.t === 'close') {
+          stack = Math.max(0, stack - 1);
+        } else if (tok.t === 'icon') {
+          if (stack > 0) {
+            slots[slots.length - 1].push(tok.v);
+            seenIconInside = true;
+          } else {
+            slots[slots.length - 1].push(tok.v);
+            seenIconOutside = true;
+          }
+        } else if (tok.t === 'text') {
+          buffer += tok.v;
+        }
+        const parts = buffer.split(/(\s+)/);
+        if (parts.length > 1) {
+          parts.forEach(p => {
+            if (!/\s+/.test(p)) pushWord(p);
+          });
+          buffer = "";
+        }
+      });
+      if (buffer.trim()) pushWord(buffer.trim());
+      if (slots.length === words.length) slots.push([]);
+      const colorIcon = seenIconInside && !seenIconOutside ? true : (!seenIconInside && seenIconOutside ? false : true);
+      return {
+        mode,
+        color,
+        words,
+        slots,
+        colorIcon
+      };
+    }
+
+    function applyParsed(p) {
+      if (!p) return;
+      el.title.value = sanitize(p.words.join(' '));
+      el.color.value = (p.color ?? "");
+      el.colorIcon.checked = !!p.colorIcon;
+      document.querySelectorAll('input[name="syntax"]').forEach(r => r.checked = (r.value === (p.mode || 'bracket')));
+      const n = p.words.length + 1;
+      iconsBySlot = Array.from({
+        length: n
+      }, (_, i) => (p.slots[i] || []).filter(tok => ICONS.includes(tok)).slice(0, 8));
+      render();
+    }
+    /****************
+
+     * Render + Counts + Preview
+
+     ****************/
+    function render() {
+      const t = sanitize(el.title.value);
+      el.title.value = t;
+      el.count.textContent = `${t.length} / ${MAX_VISIBLE}`;
+      const raw = buildRaw();
+      el.raw.value = raw;
+      el.tagCount.textContent = `total: ${raw.length}`;
+      el.warn.textContent = t.length <= MAX_VISIBLE ? "Within limit" : "Too long";
+      el.warn.style.color = t.length <= MAX_VISIBLE ? "var(--ok)" : "var(--bad)";
+      renderPlacement();
+      renderPreview();
+      save();
+    }
+
+    function renderPreview() {
+      const t = sanitize(el.title.value);
+      el.preview.innerHTML = "";
+      el.scopeNote.textContent = "";
+      if (!t) return;
+      const words = t.split(' '),
+        cls = el.color.value ? ("c-" + el.color.value) : "";
+      if (el.colorIcon.checked) {
+        const scope = document.createElement('span');
+        scope.className = "scope " + cls;
+        for (let i = 0; i < iconsBySlot.length; i++) {
+          (iconsBySlot[i] || []).forEach(tok => scope.appendChild(document.createTextNode((EMOJI[tok] || "🔖") + " ")));
+          if (i < words.length) {
+            scope.appendChild(document.createTextNode(words[i]));
+            if (i < words.length - 1) scope.appendChild(document.createTextNode(" "));
+          }
+        }
+        el.preview.appendChild(scope);
+        el.scopeNote.textContent = "Colored region = [COLOR + ICONS + TITLE]";
+      } else {
+        const tail = iconsBySlot[iconsBySlot.length - 1] || [];
+        for (let i = 0; i < iconsBySlot.length - 1; i++) {
+          (iconsBySlot[i] || []).forEach(tok => el.preview.appendChild(document.createTextNode((EMOJI[tok] || "🔖") + " ")));
+          if (i < words.length - 1) {
+            const s = document.createElement('span');
+            s.className = "scope " + cls;
+            s.textContent = words[i];
+            el.preview.appendChild(s);
+            el.preview.appendChild(document.createTextNode(" "));
+          } else if (i === words.length - 1) {
+            const s = document.createElement('span');
+            s.className = "scope " + cls;
+            s.textContent = words[i] + " ";
+            tail.forEach(tok => s.appendChild(document.createTextNode((EMOJI[tok] || "🔖") + " ")));
+            el.preview.appendChild(s);
+          }
+        }
+        if (words.length === 1) {
+          (iconsBySlot[0] || []).forEach(tok => el.preview.appendChild(document.createTextNode((EMOJI[tok] || "🔖") + " ")));
+          const s = document.createElement('span');
+          s.className = "scope " + cls;
+          s.textContent = words[0] + " ";
+          (iconsBySlot[1] || []).forEach(tok => s.appendChild(document.createTextNode((EMOJI[tok] || "🔖") + " ")));
+          el.preview.appendChild(s);
+        }
+        el.scopeNote.textContent = "Colored region = [TITLE only]; tail icons handled per profile.";
+      }
+    }
+    /****************
+
+     * Presets UI
+
+     ****************/
+    function slotsForTitle(title, spec) {
+      const n = title.split(' ').filter(Boolean).length + 1;
+      const arr = Array.from({
+        length: n
+      }, () => []);
+      for (const k in spec) {
+        const idx = (k === 'LAST') ? n - 1 : parseInt(k, 10);
+        if (Number.isFinite(idx) && idx >= 0 && idx < n) arr[idx] = (spec[k] || []).filter(tok => ICONS.includes(tok)).slice(0, 8);
+      }
+      return arr;
+    }
+
+    function applyPreset(p) {
+      el.title.value = p.title;
+      el.color.value = (p.color ?? "");
+      el.colorIcon.checked = p.colorIcon === false ? false : true;
+      iconsBySlot = slotsForTitle(p.title, p.slots || {});
+      render();
+      ping('ok');
+    }
+
+    function renderPresets() {
+      el.presetContainer.innerHTML = "";
+      const list = (PRESETS[context] || []).slice();
+      const favs = new Set((favorites[context] || []));
+      list.sort((a, b) => (favs.has(b.label) - favs.has(a.label)) || a.label.localeCompare(b.label));
+      list.forEach(p => {
+        const b = document.createElement('button');
+        b.className = "btn";
+        b.textContent = p.label;
+        b.title = p.label;
+        const star = document.createElement('button');
+        star.className = "btn ghost";
+        star.textContent = favs.has(p.label) ? '⭐' : '☆';
+        star.style.marginLeft = '6px';
+        star.onclick = (e) => {
+          e.stopPropagation();
+          toggleFav(p.label);
+          renderPresets();
+        };
+        const wrap = document.createElement('div');
+        wrap.style.display = 'flex';
+        wrap.style.gap = '6px';
+        wrap.appendChild(b);
+        wrap.appendChild(star);
+        b.onclick = () => applyPreset(p);
+        el.presetContainer.appendChild(wrap);
+      });
+    }
+
+    function toggleFav(label) {
+      favorites[context] = favorites[context] || [];
+      const idx = favorites[context].indexOf(label);
+      if (idx > -1) favorites[context].splice(idx, 1);
+      else favorites[context].push(label);
+      localStorage.setItem('nms_favs', JSON.stringify(favorites));
+    }
+    /****************
+
+     * Persistence & Share
+
+     ****************/
+    function state() {
+      return {
+        title: el.title.value,
+        color: el.color.value,
+        colorIcon: el.colorIcon.checked,
+        syntax: syntax(),
+        iconsBySlot,
+        context,
+        profile: el.profile.value,
+        muted
+      };
+    }
+
+    function save() {
+      localStorage.setItem(LS_KEY, JSON.stringify(state()));
+    }
+
+    function applyState(s) {
+      el.title.value = sanitize(s.title || "");
+      el.color.value = (s.color ?? "");
+      el.colorIcon.checked = !!s.colorIcon;
+      el.profile.value = s.profile || 'STARSHIP';
+      muted = !!s.muted;
+      el.muteBtn.setAttribute('aria-pressed', muted);
+      document.querySelectorAll('input[name="syntax"]').forEach(r => r.checked = (r.value === (s.syntax || "bracket")));
+      iconsBySlot = Array.isArray(s.iconsBySlot) ? s.iconsBySlot.map(a => Array.isArray(a) ? a.filter(tok => ICONS.includes(tok)).slice(0, 8) : []) : [];
+      setTab(s.context || 'STARSHIP');
+      ensureSlots(wordsOf(el.title.value).length + 1);
+      renderPlacement();
+      render();
+    }
+
+    function load() {
+      try {
+        const h = new URLSearchParams(location.hash.slice(1)).get('nms');
+        if (h) {
+          applyState(JSON.parse(atob(h)));
+          return;
+        }
+        const x = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+        if (x && Object.keys(x).length) applyState(x);
+        else {
+          setTab('STARSHIP');
+          renderPresets();
+        }
+      } catch {
+        setTab('STARSHIP');
+        renderPresets();
+      }
+    }
+
+    function shareLink() {
+      const hash = "nms=" + btoa(JSON.stringify(state()));
+      const base = (location.protocol === 'file:') ? '' : (location.origin + location.pathname);
+      copyText(base + "#" + hash, 'Link copied');
+    }
+    /****************
+
+     * Copy helpers
+
+     ****************/
+    function copyText(txt, msg = 'Copied') {
+      if (!txt) return;
+      if (navigator.clipboard && isSecureContext) {
+        navigator.clipboard.writeText(txt).then(() => {
+          toast(msg);
+          ping('ok');
+        }).catch(() => fallback(txt));
+      } else fallback(txt);
+
+      function fallback(t) {
+        const ta = document.createElement('textarea');
+        ta.value = t;
+        document.body.appendChild(ta);
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        ta.select();
+        try {
+          document.execCommand('copy');
+        } catch {}
+        document.body.removeChild(ta);
+        toast(msg);
+      }
+    }
+    /****************
+
+     * Tabs (ARIA + keyboard + gamepad)
+
+     ****************/
+    function setTab(name) {
+      context = name;
+      el.tabs.forEach(t => t.setAttribute('aria-selected', t.dataset.tab === name ? 'true' : 'false'));
+      // Link tabpanel label
+      const activeTab = el.tabs.find(t => t.dataset.tab === name);
+      if (activeTab) {
+        document.getElementById('app-panels').setAttribute('aria-labelledby', activeTab.id);
+      }
+      el.contextLabel.innerHTML = `Context: <strong>${name}</strong>`;
+      el.panelContext.textContent = name;
+      renderPresets();
+      save();
+    }
+    el.tabs.forEach((t, i) => {
+      t.addEventListener('click', () => {
+        setTab(t.dataset.tab);
+        ping('nav');
+      });
+      t.addEventListener('keydown', e => {
+        const idx = el.tabs.indexOf(t);
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          el.tabs[(idx + 1) % el.tabs.length].focus();
+        }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          el.tabs[(idx - 1 + el.tabs.length) % el.tabs.length].focus();
+        }
+        if (e.key === 'Home') {
+          e.preventDefault();
+          el.tabs[0].focus();
+        }
+        if (e.key === 'End') {
+          e.preventDefault();
+          el.tabs[el.tabs.length - 1].focus();
+        }
+      });
+    });
+    // Gamepad poll (LB/RB cycle)
+    let gpTimer = null;
+
+    function pollGamepad() {
+      const pads = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter(Boolean) : [];
+      if (!pads.length) {
+        gpTimer && cancelAnimationFrame(gpTimer);
+        gpTimer = null;
+        return;
+      }
+      const gp = pads[0];
+      if (!gp) return;
+      if (gp.buttons[4]?.pressed) cycleTab(-1);
+      if (gp.buttons[5]?.pressed) cycleTab(1);
+      gpTimer = requestAnimationFrame(pollGamepad);
+    }
+
+    function cycleTab(dir) {
+      const idx = el.tabs.findIndex(t => t.getAttribute('aria-selected') === 'true');
+      const next = (idx + dir + el.tabs.length) % el.tabs.length;
+      setTab(el.tabs[next].dataset.tab);
+    }
+    /****************
+
+     * Batch & Packs & Tests
+
+     ****************/
+    function runBatch() {
+      const pattern = (el.batchPattern.value || '').trim();
+      const count = Math.max(1, Math.min(99, parseInt(el.batchCount.value || '5', 10)));
+      if (!pattern) {
+        el.batchOut.value = "Provide a pattern like: DOCK {NN}";
+        return;
+      }
+      const results = [];
+      for (let i = 1; i <= count; i++) {
+        const nn = String(i).padStart(2, '0');
+        const name = sanitize(pattern.replace(/\{NN\}/g, nn));
+        const saved = el.title.value;
+        const savedSlots = iconsBySlot.map(a => a.slice());
+        el.title.value = name;
+        ensureSlots(wordsOf(name).length + 1);
+        iconsBySlot = iconsBySlot.map((arr, idx) => savedSlots[idx] || []);
+        results.push(buildRaw());
+        el.title.value = saved;
+        iconsBySlot = savedSlots;
+      }
+      el.batchOut.value = results.join("\n");
+    }
+
+    function exportPack() {
+      const pack = {
+        version: APP_VER,
+        context,
+        presets: PRESETS[context] || []
+      };
+      copyText(JSON.stringify(pack, null, 2), 'Pack JSON copied');
+      el.packInfo.value = "Exported current context pack to clipboard.";
+    }
+
+    function importPack() {
+      const inp = document.createElement('input');
+      inp.type = "file";
+      inp.accept = "application/json";
+      inp.onchange = async () => {
+        const f = inp.files[0];
+        if (!f) return;
+        const json = JSON.parse(await f.text());
+        if (json && Array.isArray(json.presets)) {
+          PRESETS[context] = mergePresets(PRESETS[context] || [], json.presets);
+          renderPresets();
+          el.packInfo.value = "Imported & merged " + json.presets.length + " presets.";
+        } else el.packInfo.value = "Invalid pack format.";
+      };
+      inp.click();
+    }
+
+    function mergePresets(cur, incoming) {
+      const map = new Map(cur.map(p => [p.label, p]));
+      incoming.forEach(p => map.set(p.label, p));
+      return Array.from(map.values());
+    }
+
+    function runTests() {
+      const logs = [];
+      const assert = (n, c) => logs.push((c ? "✅ " : "❌ ") + n);
+      const s1 = '[STELLAR][I_IMG:NV_SHIP]HANGAR ALPHA[//]';
+      const p1 = parseRaw(s1);
+      assert("parse bracket color", p1.color === 'STELLAR');
+      assert("parse bracket icon", p1.slots[0]?.includes('NV_SHIP'));
+      applyParsed(p1);
+      const s1b = buildRaw();
+      assert("round-trip equals (bracket)", s1b === s1);
+      el.title.value = 'HUB 01';
+      ensureSlots(3);
+      iconsBySlot = [
+        [],
+        ['CARGO'],
+        ['STAR']
+      ];
+      document.querySelector('input[value="angle"]').checked = true;
+      el.color.value = 'TRADE';
+      el.colorIcon.checked = false;
+      el.profile.value = 'STARSHIP';
+      const s2 = buildRaw();
+      assert("angle tail inside/STARSHIP", /<TRADE>HUB<\/>/.test(s2) && /<IMG>STAR<>$/.test(s2));
+      el.title.value = 'A'.repeat(70);
+      render();
+      assert("visible cap==64", el.title.value.length === 64);
+      el.testOut.value = logs.join("\n");
+    }
+
+    function diagnostics() {
+      const U = [];
+      U.push("Version: " + APP_VER);
+      U.push("Protocol: " + location.protocol);
+      U.push("SW supported: " + ('serviceWorker' in navigator));
+      U.push("Clipboard: " + (!!navigator.clipboard));
+      U.push("Gamepads: " + (!!navigator.getGamepads));
+      try {
+        localStorage.setItem('nms_quota_test', '1');
+        localStorage.removeItem('nms_quota_test');
+        U.push("Storage: OK");
+      } catch {
+        U.push("Storage: FAIL");
+      }
+      el.testOut.value = U.join("\n");
+    }
+    /****************
+
+     * Events
+
+     ****************/
+    function bind() {
+      ["input", "change"].forEach(evt => {
+        el.title.addEventListener(evt, render);
+        el.color.addEventListener(evt, render);
+        el.profile.addEventListener(evt, render);
+        el.colorIcon.addEventListener(evt, render);
+        document.querySelectorAll('input[name="syntax"]').forEach(r => r.addEventListener(evt, render));
+      });
+      const doCopy = () => copyText(el.raw.value, 'Raw copied');
+      el.copyBtn.onclick = doCopy;
+      el.copyBtn2.onclick = doCopy;
+      el.clearBtn.onclick = () => {
+        el.title.value = "";
+        iconsBySlot = [];
+        render();
+      };
+      el.shareBtn.onclick = shareLink;
+      el.exportBtn.onclick = () => copyText(JSON.stringify(state(), null, 2), 'State JSON copied');
+      el.importBtn.onclick = () => {
+        const inp = document.createElement('input');
+        inp.type = "file";
+        inp.accept = "application/json";
+        inp.onchange = async () => {
+          const f = inp.files[0];
+          if (!f) return;
+          const s = JSON.parse(await f.text());
+          applyState(s);
+        };
+        inp.click();
+      };
+      el.muteBtn.onclick = () => {
+        muted = !muted;
+        el.muteBtn.setAttribute('aria-pressed', muted);
+        save();
+      };
+      el.convertBtn.onclick = () => {
+        const raw = el.raw.value;
+        if (!raw) return;
+        const p = parseRaw(raw);
+        if (!p) return;
+        const newMode = syntax() === 'angle' ? 'bracket' : 'angle';
+        applyParsed({
+          ...p,
+          mode: newMode
+        });
+      };
+      el.parseBtn.onclick = () => {
+        const pr = parseRaw(el.rawIn.value.trim());
+        if (pr) {
+          applyParsed(pr);
+          toast('Parsed');
+        } else toast('Parse failed');
+      };
+      el.resetBtn.onclick = () => {
+        el.rawIn.value = "";
+      };
+      // Preset UI
+      el.favClear.onclick = () => {
+        favorites = {};
+        localStorage.setItem('nms_favs', '{}');
+        renderPresets();
+      };
+      el.packExport.onclick = exportPack;
+      el.packImport.onclick = importPack;
+      // Batch
+      el.batchRun.onclick = () => {
+        runBatch();
+        ping('ok');
+      };
+      el.batchCopy.onclick = () => copyText(el.batchOut.value, 'Batch copied');
+      // Tests/Diag
+      el.testRun.onclick = runTests;
+      el.diagBtn.onclick = diagnostics;
+      // Dialog
+      $('iconApply').onclick = (e) => {
+        e.preventDefault();
+        el.iconDialog.close();
+        render();
+      };
+      // Help copy
+      el.copyHelp.onclick = () => {
+        const text = el.helpText.innerText.replace(/\n{3,}/g, "\n\n").trim();
+        copyText(text, 'Steps copied');
+      };
+      // Gamepad polling on focus (stop when unfocused)
+      window.addEventListener('focus', () => {
+        if (!gpTimer) gpTimer = requestAnimationFrame(pollGamepad);
+      });
+      window.addEventListener('blur', () => {
+        if (gpTimer) cancelAnimationFrame(gpTimer);
+        gpTimer = null;
+      });
+    }
+    /****************
+
+     * Boot
+
+     ****************/
+    function fillUI() {
+      fillColor();
+      ensureSlots(wordsOf(el.title.value).length + 1);
+      renderPlacement();
+      renderPresets();
+    }
+
+    function boot() {
+      load();
+      fillUI();
+      bind();
+      render();
+    }
+    (function start() {
+      setTab('STARSHIP');
+      boot();
+    })();
+  </script>
+
+</body>
+
+</html>

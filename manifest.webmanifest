@@ -1,0 +1,16 @@
+{
+  "name": "NMS Name Styler — S420 PRIME",
+  "short_name": "NMS Styler",
+  "start_url": "../index.html",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "icons": [
+    {
+      "src": "../favicon.svg",
+      "sizes": "96x96",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "roundTrip": [
+    {
+      "input": "[STELLAR][I_IMG:NV_SHIP]HANGAR ALPHA[//]",
+      "expect": "[STELLAR][I_IMG:NV_SHIP]HANGAR ALPHA[//]"
+    },
+    {
+      "input": "<TRADE><IMG>CARGO<>HUB</>",
+      "expectBracket": "[TRADE][I_IMG:CARGO]HUB[//]"
+    }
+  ],
+  "parseSlots": [
+    {
+      "input": "[TECHNOLOGY]POWER DRILL[//]",
+      "words": [
+        "POWER",
+        "DRILL"
+      ],
+      "color": "TECHNOLOGY"
+    }
+  ],
+  "lengthCap": "64 visible characters"
+}
