@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>NMS // SINGULARITY</title>
+  <title>NMS // ATLAS ARCHIVE</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#000000" />
   
@@ -14,7 +14,7 @@
       --nms-orange: #ff9d00;
       --nms-red: #ff3a3a;
       --nms-white: #f0f8ff;
-      --nms-glass: rgba(12, 24, 36, 0.90);
+      --nms-glass: rgba(12, 24, 36, 0.95);
       --nms-border: rgba(68, 199, 255, 0.4);
       --ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
       --font-stack: "Century Gothic", "Futura", "Trebuchet MS", sans-serif;
@@ -103,8 +103,10 @@
     .tool-btn {
       background: rgba(255,255,255,0.1); border: none; color: #fff;
       width: 32px; height: 32px; cursor: pointer; display: grid; place-items: center;
+      transition: all 0.2s;
     }
     .tool-btn:hover { background: var(--nms-blue); color: #000; }
+    .tool-btn:active { transform: scale(0.95); }
     .tool-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
     input[type="text"], select {
@@ -151,8 +153,9 @@
       flex: 1; padding: 12px 0; background: rgba(255,255,255,0.05);
       border: none; color: #888; font-family: inherit; font-weight: bold; font-size: 12px;
       cursor: pointer; clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%);
-      min-width: 100px;
+      min-width: 100px; transition: all 0.2s;
     }
+    .tab:hover { background: rgba(255,255,255,0.1); color: #fff; }
     .tab.active { background: var(--nms-white); color: #000; }
 
     /* --- HOLD BTN --- */
@@ -169,13 +172,29 @@
     .hold-bg { fill: none; stroke: #333; stroke-width: 3; }
     .hold-prog { fill: none; stroke: var(--nms-white); stroke-width: 3; stroke-dasharray: 88; stroke-dashoffset: 88; }
 
-    /* --- DIALOG --- */
-    dialog { background: transparent; border: none; padding: 0; width: 100%; max-width: 700px; }
-    dialog::backdrop { background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); }
+    /* --- DIALOG & PICKER --- */
+    dialog { background: transparent; border: none; padding: 0; width: 100%; max-width: 900px; }
+    dialog::backdrop { background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); }
     .modal-box { background: #0f151a; border: 1px solid var(--nms-blue); padding: 4px; clip-path: polygon(20px 0, 100% 0, 100% 100%, 0 100%, 0 20px); }
-    .modal-in { background: #151b22; padding: 20px; max-height: 80vh; overflow-y: auto; }
-    .cat-btn { background: #222; border: 1px solid #444; color: #888; padding: 5px 10px; cursor: pointer; margin-bottom: 5px; font-size: 10px; }
-    .cat-btn.active { background: var(--nms-blue); color: #000; }
+    .modal-in { background: #151b22; padding: 20px; max-height: 85vh; display: flex; flex-direction: column; }
+    
+    .cat-rail { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+    .cat-btn { 
+      background: #222; border: 1px solid #444; color: #888; padding: 8px 12px; 
+      cursor: pointer; font-size: 11px; font-weight: bold; transition: all 0.2s;
+    }
+    .cat-btn:hover { border-color: var(--nms-blue); color: #fff; }
+    .cat-btn.active { background: var(--nms-blue); color: #000; border-color: var(--nms-blue); }
+
+    .icon-scroll { overflow-y: auto; max-height: 50vh; display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; padding-right: 8px; }
+    .icon-item {
+      background: #0b1620; border: 1px solid #2a3b4c; height: 60px; 
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.1s;
+    }
+    .icon-item:hover { border-color: var(--nms-white); background: #1a2b3c; transform: scale(1.05); }
+    .icon-sym { font-size: 22px; margin-bottom: 4px; }
+    .icon-lbl { font-size: 8px; color: #687d90; text-align: center; overflow: hidden; width: 100%; white-space: nowrap; text-overflow: ellipsis; }
 
     .grid-main { display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
     @media (max-width: 900px) { .grid-main { grid-template-columns: 1fr; } }
@@ -187,14 +206,15 @@
       background: rgba(0,0,0,0.9); border: 2px solid var(--nms-white);
       padding: 20px 40px; font-size: 20px; font-weight: 900; z-index: 10000;
       pointer-events: none; opacity: 0; transition: opacity 0.2s;
+      box-shadow: 0 0 30px var(--nms-blue);
     }
   </style>
 </head>
 <body>
 
   <div id="boot-screen">
-    <div class="boot-logo">ATLAS // SINGULARITY</div>
-    <div class="boot-sub">INITIALIZING INTERFACE...</div>
+    <div class="boot-logo">ATLAS // ARCHIVE</div>
+    <div class="boot-sub">LOADING ASSET DATABASE v3.1...</div>
   </div>
 
   <canvas id="hex-canvas"></canvas>
@@ -206,11 +226,11 @@
       
       <header class="hud">
         <div class="title">
-          <h1>SINGULARITY</h1>
+          <h1>ATLAS ARCHIVE</h1>
           <span class="subtitle" id="ctx-label">STARSHIP // EDIT MODE</span>
         </div>
         <div style="text-align:right; font-size:10px; color:#889bb0;">
-           <div><strong>v3.0</strong> STABLE</div>
+           <div><strong>v3.1</strong> SINGULARITY</div>
            <div><strong id="mem-stat">0/64</strong> MEMORY</div>
         </div>
       </header>
@@ -233,7 +253,7 @@
                 <div class="toolbar">
                   <button id="undoBtn" class="tool-btn" title="UNDO">↶</button>
                   <button id="redoBtn" class="tool-btn" title="REDO">↷</button>
-                  <button id="genBtn" class="tool-btn" title="GENERATE LORE NAME">🎲</button>
+                  <button id="genBtn" class="tool-btn" title="GENERATE LORE NAME (RANDOM)">🎲</button>
                 </div>
               </div>
               
@@ -320,11 +340,13 @@
     <div class="modal-box">
       <div class="modal-in">
         <div class="panel-head">
-          <h2>SELECT MODULE</h2>
+          <h2>SELECT ASSET</h2>
           <button id="closeModal" style="background:none;border:none;color:var(--nms-red);font-weight:900;cursor:pointer">CLOSE</button>
         </div>
-        <div id="catBar" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;"></div>
-        <div id="iconGrid" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        
+        <div id="catRail" class="cat-rail"></div>
+        
+        <div id="iconScroll" class="icon-scroll"></div>
       </div>
     </div>
   </dialog>
@@ -332,40 +354,70 @@
   <div id="toast" class="toast">DATA UPLOADED</div>
 
   <script>
-    /* --- DATA: EXPANDED DICTIONARY --- */
+    /* --- DATABASE: THE ATLAS ARCHIVE --- */
     const DB = {
       colors: ["GREEN","RED","STELLAR","FUEL","TRADE","TECHNOLOGY","SPECIAL","RARE","HIGHLIGHT","MISSIONPRIMARY","MISSIONSECOND","FLORA","METAL","EARTH","POS_AVG","NEU_AVG","TITLE_BRIGHT","COMMODITY","VISOR","DARK_TECH"],
+      
+      // Massive Asset Categories
       categories: {
-        "COMMON": ["NV_SHIP","CARGO","FUEL","STAR","TRADE1","TECH1","UNITS","PLANET","CREATURE","HAZARD"],
-        "UI": ["DOT","CLOCK","MISSIONSTART","DIFFICULTY","QUICKSILV","BONES","POWER","GRID"],
-        "INV": ["INVSHIP","INVTECH","INVCARGO","SHIP_S","SHIP_A","SHIP_B","SHIP_C"],
-        "PLATFORM": ["ICON_GOG","ICON_PS","ICON_STEAM","ICON_XBL","ICON_KBM"],
-        "CLASS": ["SCLASS","ACLASS","BCLASS","CCLASS"],
-        "NATURE": ["FLORA","WHEAT","PLANT"],
-        "COOKING": ["STEW","CAKE","PIE","MEAT","EGG","MILK"]
+        "UI": ["DOT","CLOCK","UNIT","NANITE","QS","MISSIONSTART","DIFFICULTY","POWER","GRID","SUMMON","SAVE"],
+        "SHIP": ["NV_SHIP","SHIP_S","SHIP_A","SHIP_B","SHIP_C","FIGHTER","DROP","SHUTTLE","ROYAL","HAULER","EXPLORER","SAIL"],
+        "TECH": ["TECH1","HYPER","PULSE","SHIELD","LASER","BOLT","MINING","SCAN","VISOR","JET","LIFE","HAZARD"],
+        "COMMODITY": ["CARGO","FUEL","TRADE1","UNITS","DATA","NAV","CHIP","KEY","CORE","CELL","BATTERY","GEL","ACID"],
+        "ELEMENTS": ["CARBON","OXYGEN","FERRITE","DI_HY","SODIUM","COBALT","SALT","CHLORINE","COPPER","CADMIUM","EMERIL","INDIUM","GOLD","SILVER","PLATINUM"],
+        "COOKING": ["STEW","CAKE","PIE","MEAT","EGG","MILK","BAIT","WHEAT","ROOT","BERRY","SUGAR","FLOUR","YEAST","CREAM","BUTTER","CHEESE","OIL"],
+        "TRADE": ["G_NIP","K_CASE","V_DAG","RELIC","EFFIGY","GEAR","CIRCUIT","GLASS","FLUID","TEXTILE","ALLOY","GAS","MINERAL"],
+        "NATURE": ["PLANET","CREATURE","FLORA","WHEAT","PLANT","TREE","ROCK","CAVE","WATER","STORM","FIRE","TOXIC","RAD","COLD"],
+        "FACTIONS": ["ATLAS","NADA","POLO","GEK","KORVAX","VYKEEN","TRAV","ANOMALY","PIRATE","SENTINEL"],
+        "PLATFORM": ["ICON_GOG","ICON_PS","ICON_STEAM","ICON_XBL","ICON_KBM","MOUSE","GAMEPAD"],
+        "EXPEDITION": ["EXPED","PATCH_1","PATCH_2","PATCH_3","PATCH_4","PATCH_5","BADGE","STAR","SCLASS","ACLASS","BCLASS","CCLASS"]
       },
+      
+      // Text-to-Emoji Mappings (Simulation)
       emoji: {
-        "NV_SHIP":"🚀","CARGO":"📦","FUEL":"⛽","STAR":"⭐","TRADE1":"💱","TECH1":"🛠️","UNITS":"💰","PLANET":"🪐","CREATURE":"🐾","HAZARD":"☣️","DOT":"•","CLOCK":"⏰","MISSIONSTART":"🎯","DIFFICULTY":"⚠️","QUICKSILV":"🪙","BONES":"🦴","POWER":"🔌","GRID":"#","INVSHIP":"🚀","INVTECH":"🔧","INVCARGO":"🎒","ICON_GOG":"🟢","ICON_PS":"🅿️","ICON_STEAM":"♨️","ICON_XBL":"🕹️","ICON_KBM":"⌨️","SCLASS":"🟨S","ACLASS":"🟩A","BCLASS":"🟦B","CCLASS":"🟫C","FLORA":"🌿","WHEAT":"🌾","PLANT":"🌲","STEW":"🍲","CAKE":"🍰","PIE":"🥧","MEAT":"🥩","EGG":"🥚","MILK":"🥛"
+        // UI
+        "DOT":"•","CLOCK":"⏰","UNIT":"Units","NANITE":"💠","QS":"🪙","MISSIONSTART":"🎯","DIFFICULTY":"⚠️","POWER":"🔌","GRID":"#","SUMMON":"📡","SAVE":"💾",
+        // SHIP
+        "NV_SHIP":"🚀","SHIP_S":"🟨S","SHIP_A":"🟩A","SHIP_B":"🟦B","SHIP_C":"🟫C","FIGHTER":"⚔️","DROP":"📦","SHUTTLE":"🚐","ROYAL":"👑","HAULER":"🚛","EXPLORER":"🦗","SAIL":"⛵",
+        // TECH
+        "TECH1":"🛠️","HYPER":"🌌","PULSE":"💨","SHIELD":"🛡️","LASER":"🔫","BOLT":"⚡","MINING":"⛏️","SCAN":"📡","VISOR":"👁️","JET":"🚀","LIFE":"❤️","HAZARD":"☣️",
+        // COMMODITY
+        "CARGO":"📦","FUEL":"⛽","TRADE1":"💱","UNITS":"💰","DATA":"💾","NAV":"🗺️","CHIP":"📟","KEY":"🔑","CORE":"🔮","CELL":"🔋","BATTERY":"🔋","GEL":"🧪","ACID":"⚗️",
+        // ELEMENTS
+        "CARBON":"C","OXYGEN":"O2","FERRITE":"Fe","DI_HY":"H2","SODIUM":"Na","COBALT":"Co","SALT":"NaCl","CHLORINE":"Cl","COPPER":"Cu","CADMIUM":"Cd","EMERIL":"Em","INDIUM":"In","GOLD":"Au","SILVER":"Ag","PLATINUM":"Pt",
+        // COOKING
+        "STEW":"🍲","CAKE":"🍰","PIE":"🥧","MEAT":"🥩","EGG":"🥚","MILK":"🥛","BAIT":"🍖","WHEAT":"🌾","ROOT":"🥕","BERRY":"🫐","SUGAR":"🍬","FLOUR":"🥡","YEAST":"🍞","CREAM":"🧁","BUTTER":"🧈","CHEESE":"🧀","OIL":"🏺",
+        // TRADE
+        "G_NIP":"🌿","K_CASE":"📦","V_DAG":"🗡️","RELIC":"🗿","EFFIGY":"👺","GEAR":"⚙️","CIRCUIT":"💾","GLASS":"🧊","FLUID":"💧","TEXTILE":"🧣","ALLOY":"🔩","GAS":"☁️","MINERAL":"💎",
+        // NATURE
+        "PLANET":"🪐","CREATURE":"🐾","FLORA":"🌿","PLANT":"🌲","TREE":"🌳","ROCK":"🪨","CAVE":"🕳️","WATER":"💧","STORM":"🌪️","FIRE":"🔥","TOXIC":"🤢","RAD":"☢️","COLD":"❄️",
+        // FACTIONS
+        "ATLAS":"🔴","NADA":"🤖","POLO":"🐸","GEK":"🐸","KORVAX":"🤖","VYKEEN":"👹","TRAV":"🧑‍🚀","ANOMALY":"👾","PIRATE":"☠️","SENTINEL":"👁️‍🗨️",
+        // PLATFORM
+        "ICON_GOG":"🟢","ICON_PS":"🅿️","ICON_STEAM":"♨️","ICON_XBL":"🕹️","ICON_KBM":"⌨️","MOUSE":"🖱️","GAMEPAD":"🎮",
+        // EXPEDITION
+        "EXPED":"🚩","PATCH_1":"1️⃣","PATCH_2":"2️⃣","PATCH_3":"3️⃣","PATCH_4":"4️⃣","PATCH_5":"5️⃣","BADGE":"🎖️","STAR":"⭐","SCLASS":"🟨S","ACLASS":"🟩A","BCLASS":"🟦B","CCLASS":"🟫C"
       },
+
       presets: {
         "STARSHIP": [ {l:"RADIANT PILLAR",t:"RADIANT PILLAR",c:"STELLAR",s:[["NV_SHIP"]]}, {l:"GOLDEN VECTOR",t:"GOLDEN VECTOR",c:"TITLE_BRIGHT",s:[["SCLASS"]]}, {l:"UTOPIA SPEEDER",t:"UTOPIA SPEEDER",c:"SPECIAL",s:[["STAR"]]} ],
         "MULTI-TOOL": [ {l:"ATLAS SCEPTRE",t:"ATLAS SCEPTRE",c:"RED",s:[["TECH1"]]}, {l:"SENTINEL RIFLE",t:"SENTINEL",c:"HIGHLIGHT",s:[["HAZARD"]]} ],
         "FREIGHTER": [ {l:"CAPITAL",t:"CAPITAL SHIP",c:"STELLAR",s:[["STAR"]]} ]
       },
+      
+      // Procedural Grammar Vocabulary
       vocab: {
-        adj: ["RADIANT","ANCIENT","CRIMSON","STELLAR","VOID","OMEGA","ALPHA","IRON","GOLDEN","FRACTURED","LOST","ECHOING","SINGULAR","GLASS","OBSIDIAN"],
-        noun: ["PILLAR","VECTOR","VULTURE","EAGLE","HORIZON","ECLIPSE","DREAM","SOUL","MIRROR","SHARD","TRAVELER","ENTITY","ANOMALY","ARK","WANDERER"]
+        adj: ["RADIANT","ANCIENT","CRIMSON","STELLAR","VOID","OMEGA","ALPHA","IRON","GOLDEN","FRACTURED","LOST","ECHOING","SINGULAR","GLASS","OBSIDIAN","DORMANT","FORGOTTEN","ETERNAL","RISING","FALLEN","SILENT","BURNING","FROZEN","TOXIC","VERDANT","AZURE","CRIMSON"],
+        noun: ["PILLAR","VECTOR","VULTURE","EAGLE","HORIZON","ECLIPSE","DREAM","SOUL","MIRROR","SHARD","TRAVELER","ENTITY","ANOMALY","ARK","WANDERER","HOPE","DESPAIR","LIGHT","DARKNESS","PATH","DESTINY","FATE","SENTINEL","GUARDIAN","WATCHER","PROPHET"],
+        prefix: ["CS","SV","MV","DS","HMS","SS"],
+        num: ["1","X","ALPHA","PRIME","ZERO","VII","IX"]
       }
     };
-    // Flatten icons for easy check
-    const ALL_ICONS = Object.values(DB.categories).flat();
 
     /* --- ENGINE --- */
     const MAX_CHAR = 64;
-    const MAX_PIXEL = 700; // Approx width limit in game UI
+    const MAX_PIXEL = 700; 
     let ctx = "STARSHIP";
-    
-    // State Management with Undo
     let history = [];
     let histPtr = -1;
     let isUndoing = false;
@@ -401,7 +453,8 @@
       el('redoBtn').onclick = redo;
       el('genBtn').onclick = generateLore;
       el('imgBtn').onclick = exportImage;
-      
+      el('closeModal').onclick = () => el('modal').close();
+
       // Tabs
       document.querySelectorAll('.tab').forEach(t => {
         t.onclick = () => {
@@ -414,13 +467,10 @@
         }
       });
 
-      // Modal
-      el('closeModal').onclick = () => el('modal').close();
-
       // Buttons
       setupHold('btnCopy', () => { copy(buildRaw()); });
       setupHold('btnSaveEdit', () => { 
-        const json = { Name: buildRaw() }; // Simple wrapper
+        const json = { Name: buildRaw() };
         copy(JSON.stringify(json)); 
         toast("JSON OBJECT COPIED");
       });
@@ -430,30 +480,24 @@
         pushState(s);
       });
 
-      // Boot State
+      // Boot
       pushState(createInitialState());
       renderPresets();
-      
-      // FX
       initHexCanvas();
       initTilt();
     };
 
-    /* --- STATE LOGIC --- */
+    /* --- STATE & UNDO --- */
     function getCurrent() { return history[histPtr]; }
     
     function pushState(newState) {
-      // Slice history if we are in middle
-      if (histPtr < history.length - 1) {
-        history = history.slice(0, histPtr + 1);
-      }
+      if (histPtr < history.length - 1) history = history.slice(0, histPtr + 1);
       history.push(JSON.parse(JSON.stringify(newState)));
       histPtr++;
       updateUI();
       checkUndoUI();
     }
 
-    // Called on inputs (Debounced in a real app, here direct)
     function commit() {
       if(isUndoing) return;
       const s = JSON.parse(JSON.stringify(getCurrent()));
@@ -462,7 +506,6 @@
       s.colorIcon = ui.check.checked;
       s.syntax = document.querySelector('input[name="syn"]:checked').value;
       
-      // Ensure slots array matches word count + 1
       const words = s.title.split(' ').filter(x=>x);
       const needed = words.length + 1;
       while(s.slots.length < needed) s.slots.push([]);
@@ -472,31 +515,15 @@
     }
 
     function undo() {
-      if (histPtr > 0) {
-        histPtr--;
-        isUndoing = true;
-        restore(history[histPtr]);
-        isUndoing = false;
-        checkUndoUI();
-        ping('nav');
-      }
+      if (histPtr > 0) { histPtr--; isUndoing = true; restore(history[histPtr]); isUndoing = false; checkUndoUI(); ping('nav'); }
     }
 
     function redo() {
-      if (histPtr < history.length - 1) {
-        histPtr++;
-        isUndoing = true;
-        restore(history[histPtr]);
-        isUndoing = false;
-        checkUndoUI();
-        ping('nav');
-      }
+      if (histPtr < history.length - 1) { histPtr++; isUndoing = true; restore(history[histPtr]); isUndoing = false; checkUndoUI(); ping('nav'); }
     }
 
     function restore(s) {
-      ui.title.value = s.title;
-      ui.color.value = s.color;
-      ui.check.checked = s.colorIcon;
+      ui.title.value = s.title; ui.color.value = s.color; ui.check.checked = s.colorIcon;
       document.querySelectorAll('input[name="syn"]').forEach(r => r.checked = (r.value === s.syntax));
       updateUI();
     }
@@ -506,26 +533,50 @@
       ui.redo.disabled = histPtr >= history.length - 1;
     }
 
+    /* --- PROCEDURAL GRAMMAR --- */
+    function generateLore() {
+      const s = JSON.parse(JSON.stringify(getCurrent()));
+      const vocab = DB.vocab;
+      const rnd = (arr) => arr[Math.floor(Math.random() * arr.length)];
+      
+      // Grammar Templates
+      const templates = [
+        () => `THE ${rnd(vocab.adj)} ${rnd(vocab.noun)}`,                  // "THE RADIANT PILLAR"
+        () => `${rnd(vocab.noun)} OF ${rnd(vocab.noun)}`,                   // "PILLAR OF HOPE"
+        () => `${rnd(vocab.adj)} ${rnd(vocab.noun)} OF THE ${rnd(vocab.noun)}`, // "LOST SOUL OF THE ATLAS"
+        () => `${rnd(vocab.prefix)}-${Math.floor(Math.random()*99)} ${rnd(vocab.noun)}`, // "SV-42 VECTOR"
+        () => `${rnd(vocab.noun)} ${rnd(vocab.num)}`                        // "EAGLE PRIME"
+      ];
+      
+      const name = rnd(templates)();
+      s.title = name;
+      
+      if(Math.random() > 0.5) s.color = rnd(DB.colors);
+      
+      // Reset slots
+      s.slots = [];
+      const w = name.split(' ').length;
+      for(let i=0; i<=w; i++) s.slots.push([]);
+      
+      pushState(s);
+      toast("LORE GENERATED");
+      ping('ok');
+    }
+
     /* --- RENDERING --- */
     function updateUI() {
       const s = getCurrent();
       const words = s.title.split(' ').filter(x=>x);
-      const raw = buildRaw();
       
-      // 1. Render Slots (Drag & Drop)
+      // Render Slots
       ui.slots.innerHTML = "";
       for(let i=0; i<s.slots.length; i++) {
-        // Slot Div
         const slot = document.createElement('div');
         slot.className = "slot";
         slot.draggable = true;
         slot.dataset.idx = i;
         
-        // Drag Events
-        slot.addEventListener('dragstart', e => {
-          e.dataTransfer.setData('idx', i);
-          slot.classList.add('dragging');
-        });
+        slot.addEventListener('dragstart', e => { e.dataTransfer.setData('idx', i); slot.classList.add('dragging'); });
         slot.addEventListener('dragend', () => slot.classList.remove('dragging'));
         slot.addEventListener('dragover', e => { e.preventDefault(); slot.style.borderColor = "#fff"; });
         slot.addEventListener('dragleave', () => slot.style.borderColor = "");
@@ -534,17 +585,12 @@
           const from = e.dataTransfer.getData('idx');
           const to = i;
           if(from !== "" && from != to) {
-             // Swap Logic (only within array bounds)
-             const temp = s.slots[from];
-             s.slots[from] = s.slots[to];
-             s.slots[to] = temp;
-             pushState(s);
-             ping('ok');
+             const temp = s.slots[from]; s.slots[from] = s.slots[to]; s.slots[to] = temp;
+             pushState(s); ping('ok');
           }
         });
         slot.onclick = () => openModal(i);
 
-        // Content
         if(s.slots[i] && s.slots[i].length > 0) {
           slot.innerHTML = `<span class="slot-img">${DB.emoji[s.slots[i][0]] || "💠"}</span>`;
           slot.style.borderColor = "var(--nms-orange)";
@@ -553,19 +599,14 @@
         }
         ui.slots.appendChild(slot);
 
-        // Word Chip
         if(i < words.length) {
-          const chip = document.createElement('div');
-          chip.className = "word-chip";
-          chip.textContent = words[i];
+          const chip = document.createElement('div'); chip.className = "word-chip"; chip.textContent = words[i];
           ui.slots.appendChild(chip);
         }
       }
 
-      // 2. Preview
+      // Render Preview & Width
       renderPreview(s, words);
-      
-      // 3. Stats
       ui.mem.textContent = `${s.title.length}/${MAX_CHAR}`;
     }
 
@@ -573,35 +614,21 @@
       const box = ui.preview;
       box.innerHTML = "";
       const colorCSS = getColorCSS(s.color);
-      
-      // Helper for span
       const mk = (txt, colorize) => {
-        const sp = document.createElement('span');
-        sp.textContent = txt + " "; // Add spacing
-        if(colorize && s.color) {
-          sp.style.color = colorCSS;
-          sp.style.textShadow = `0 0 5px ${colorCSS}`;
-        }
+        const sp = document.createElement('span'); sp.textContent = txt + " ";
+        if(colorize && s.color) { sp.style.color = colorCSS; sp.style.textShadow = `0 0 5px ${colorCSS}`; }
         return sp;
       };
 
       for(let i=0; i<s.slots.length; i++) {
-        // Icon
-        if(s.slots[i] && s.slots[i].length > 0) {
-          box.appendChild(mk((DB.emoji[s.slots[i][0]] || "💠"), s.colorIcon));
-        }
-        // Word
-        if(i < words.length) {
-          box.appendChild(mk(words[i], true));
-        }
+        if(s.slots[i] && s.slots[i].length > 0) box.appendChild(mk((DB.emoji[s.slots[i][0]] || "💠"), s.colorIcon));
+        if(i < words.length) box.appendChild(mk(words[i], true));
       }
 
-      // 4. Width Calculation
-      // Create Canvas to measure
       const cv = document.createElement('canvas');
       const cx = cv.getContext('2d');
       cx.font = "900 24px 'Century Gothic', sans-serif";
-      const width = cx.measureText(box.textContent).width * 1.5; // 1.5 approx spacing factor
+      const width = cx.measureText(box.textContent).width * 1.5;
       const pct = Math.min(100, (width / MAX_PIXEL) * 100);
       
       ui.widthBar.style.width = pct + "%";
@@ -610,7 +637,6 @@
       ui.widthWarn.style.color = pct > 90 ? "red" : "#666";
     }
 
-    /* --- LOGIC HELPERS --- */
     function buildRaw() {
       const s = getCurrent();
       const words = s.title.split(' ').filter(x=>x);
@@ -626,110 +652,80 @@
           if(s.slots[i]) s.slots[i].forEach(x => out += icon(x));
           if(i < words.length) out += words[i] + " ";
         }
-        // Trim trailing space
-        out = out.trim(); 
-        if(s.color) out += close;
+        out = out.trim(); if(s.color) out += close;
       } else {
          for(let i=0; i<s.slots.length; i++) {
           if(s.slots[i]) s.slots[i].forEach(x => out += icon(x));
-          if(i < words.length) {
-            out += (s.color ? open+words[i]+close : words[i]) + " ";
-          }
+          if(i < words.length) out += (s.color ? open+words[i]+close : words[i]) + " ";
         }
       }
       return out.trim();
     }
 
-    function generateLore() {
-      const s = JSON.parse(JSON.stringify(getCurrent()));
-      const adj = DB.vocab.adj[Math.floor(Math.random()*DB.vocab.adj.length)];
-      const noun = DB.vocab.noun[Math.floor(Math.random()*DB.vocab.noun.length)];
-      const name = `THE ${adj} ${noun}`;
-      s.title = name;
-      
-      // Random Color
-      if(Math.random() > 0.3) {
-        s.color = DB.colors[Math.floor(Math.random()*DB.colors.length)];
-      }
-      
-      // Reset slots
-      s.slots = [];
-      const w = name.split(' ').length;
-      for(let i=0; i<=w; i++) s.slots.push([]);
-      
-      pushState(s);
-      toast("LORE GENERATED");
-      ping('ok');
-    }
-
     function exportImage() {
        const box = ui.preview;
-       const cv = document.createElement('canvas');
-       cv.width = 600; cv.height = 150;
+       const cv = document.createElement('canvas'); cv.width = 600; cv.height = 150;
        const cx = cv.getContext('2d');
-       
-       // BG
        cx.fillStyle = "#0b1e2d"; cx.fillRect(0,0,600,150);
-       // Border
        cx.strokeStyle = "#44c7ff"; cx.lineWidth = 4; cx.strokeRect(10,10,580,130);
-       
-       // Text
        cx.font = "900 30px 'Century Gothic', sans-serif";
        cx.textAlign = "center"; cx.textBaseline = "middle";
        cx.fillStyle = "#fff";
        if(getCurrent().color) cx.fillStyle = getColorCSS(getCurrent().color);
-       
        cx.fillText(box.textContent, 300, 75);
-       
-       // Open
        const img = cv.toDataURL("image/png");
-       const w = window.open("");
-       w.document.write('<img src="'+img+'" style="border:1px solid #555"/>');
+       const w = window.open(""); w.document.write('<img src="'+img+'" style="border:1px solid #555"/>');
     }
 
-    /* --- MODAL --- */
+    /* --- LAZY LOAD MODAL --- */
     let modIdx = -1;
     function openModal(idx) {
       modIdx = idx;
-      renderIconGrid("COMMON"); // Default
+      renderCategoryTabs("UI"); // Default
       el('modal').showModal();
     }
     
-    function renderIconGrid(cat) {
-      const grid = el('iconGrid');
-      const bar = el('catBar');
-      grid.innerHTML = ""; bar.innerHTML = "";
-      
-      // Categories
-      Object.keys(DB.categories).forEach(k => {
+    function renderCategoryTabs(activeCat) {
+      const rail = el('catRail');
+      rail.innerHTML = "";
+      Object.keys(DB.categories).forEach(cat => {
         const b = document.createElement('button');
-        b.className = "cat-btn" + (k===cat ? " active":"");
-        b.textContent = k;
-        b.onclick = () => renderIconGrid(k);
-        bar.appendChild(b);
+        b.className = "cat-btn" + (cat === activeCat ? " active" : "");
+        b.textContent = cat;
+        b.onclick = () => renderCategoryIcons(cat, b);
+        rail.appendChild(b);
       });
+      renderCategoryIcons(activeCat);
+    }
+
+    function renderCategoryIcons(cat, btnEl) {
+      if(btnEl) {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        btnEl.classList.add('active');
+      }
       
-      // Icons
+      const scroll = el('iconScroll');
+      scroll.innerHTML = "";
+      
+      // Lazy Load Simulation: Only render active category
       DB.categories[cat].forEach(tok => {
         const d = document.createElement('div');
-        d.style.cssText = "width:60px;height:60px;background:#000;border:1px solid #333;display:grid;place-items:center;cursor:pointer;";
-        d.innerHTML = `<div style="font-size:20px">${DB.emoji[tok]||"💠"}</div><div style="font-size:9px;color:#666">${tok}</div>`;
+        d.className = "icon-item";
+        d.innerHTML = `<div class="icon-sym">${DB.emoji[tok]||"💠"}</div><div class="icon-lbl">${tok}</div>`;
         d.onclick = () => {
            const s = JSON.parse(JSON.stringify(getCurrent()));
-           // Toggle icon in slot (Max 1 for UI cleanliness, can be array in logic)
            if(s.slots[modIdx][0] === tok) s.slots[modIdx] = [];
            else s.slots[modIdx] = [tok];
            pushState(s);
            el('modal').close();
            ping('ok');
         };
-        grid.appendChild(d);
+        scroll.appendChild(d);
       });
     }
 
     function renderPresets() {
-      const list = el('presetList');
-      list.innerHTML = "";
+      const list = el('presetList'); list.innerHTML = "";
       (DB.presets[ctx]||[]).forEach(p => {
         const d = document.createElement('div');
         d.style.cssText = "padding:10px 20px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;display:flex;justify-content:space-between;";
@@ -737,103 +733,56 @@
         d.onclick = () => {
            const s = createInitialState();
            s.title = p.t; s.color = p.c; s.slots = p.s;
-           pushState(s);
-           toast("PRESET LOADED");
-           ping('ok');
+           pushState(s); toast("PRESET LOADED"); ping('ok');
         };
         list.appendChild(d);
       });
     }
 
-    /* --- UTILS --- */
+    /* --- UTILS & AUDIO --- */
     function getColorCSS(name) {
-      // Simplified map
       const map = {GREEN:"#22c55e",RED:"#ef4444",STELLAR:"#facc15",FUEL:"#f59e0b",TRADE:"#10b981",TECHNOLOGY:"#818cf8",SPECIAL:"#f472b6",RARE:"#e879f9",HIGHLIGHT:"#67e8f9"};
       return map[name] || "#fff";
     }
+    function copy(txt) { navigator.clipboard.writeText(txt); toast("DATA COPIED"); ping('ok'); }
+    function toast(msg) { const t = el('toast'); t.textContent = msg; t.style.opacity = 1; setTimeout(() => t.style.opacity = 0, 1500); }
     
-    function copy(txt) {
-      navigator.clipboard.writeText(txt);
-      toast("DATA COPIED");
-      ping('ok');
-    }
-
-    function toast(msg) {
-      const t = el('toast');
-      t.textContent = msg; t.style.opacity = 1;
-      setTimeout(() => t.style.opacity = 0, 1500);
-    }
-
     function setupHold(id, cb) {
-      const btn = el(id);
-      const c = btn.querySelector('.hold-prog');
-      const ring = 88; 
-      let t, start;
-      
-      const reset = () => {
-        clearTimeout(t);
-        c.style.transition = "stroke-dashoffset 0.2s";
-        c.style.strokeDashoffset = ring;
-      };
-      
-      const run = (e) => {
-        e.preventDefault();
-        c.style.transition = "stroke-dashoffset 0.8s linear";
-        c.style.strokeDashoffset = 0;
-        t = setTimeout(() => { cb(); reset(); }, 800);
-      };
-      
-      btn.onmousedown = run; btn.ontouchstart = run;
-      btn.onmouseup = reset; btn.onmouseleave = reset; btn.ontouchend = reset;
+      const btn = el(id); const c = btn.querySelector('.hold-prog'); const ring = 88; let t;
+      const reset = () => { clearTimeout(t); c.style.transition = "stroke-dashoffset 0.2s"; c.style.strokeDashoffset = ring; };
+      const run = (e) => { e.preventDefault(); c.style.transition = "stroke-dashoffset 0.8s linear"; c.style.strokeDashoffset = 0; t = setTimeout(() => { cb(); reset(); }, 800); };
+      btn.onmousedown = run; btn.ontouchstart = run; btn.onmouseup = reset; btn.onmouseleave = reset; btn.ontouchend = reset;
     }
 
-    /* --- AUDIO --- */
     let actx;
     function ping(t) {
       if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
-      const o = actx.createOscillator();
-      const g = actx.createGain();
-      const now = actx.currentTime;
+      const o = actx.createOscillator(); const g = actx.createGain(); const now = actx.currentTime;
       o.connect(g); g.connect(actx.destination);
-      
       if(t==='ok') {
-        o.type = 'sine';
-        o.frequency.setValueAtTime(800, now);
-        o.frequency.exponentialRampToValueAtTime(400, now+0.1);
-        g.gain.setValueAtTime(0.1, now);
-        g.gain.linearRampToValueAtTime(0, now+0.1);
+        o.type = 'sine'; o.frequency.setValueAtTime(800, now); o.frequency.exponentialRampToValueAtTime(400, now+0.1);
+        g.gain.setValueAtTime(0.1, now); g.gain.linearRampToValueAtTime(0, now+0.1);
         o.start(); o.stop(now+0.1);
       } else {
-        o.type = 'triangle';
-        o.frequency.setValueAtTime(1200, now);
-        g.gain.setValueAtTime(0.05, now);
-        g.gain.linearRampToValueAtTime(0, now+0.05);
+        o.type = 'triangle'; o.frequency.setValueAtTime(1200, now);
+        g.gain.setValueAtTime(0.05, now); g.gain.linearRampToValueAtTime(0, now+0.05);
         o.start(); o.stop(now+0.05);
       }
     }
 
     /* --- FX --- */
     function initHexCanvas() {
-      const c = el('hex-canvas');
-      const x = c.getContext('2d');
-      let w,h;
-      const rs = () => { w=c.width=innerWidth; h=c.height=innerHeight; };
-      window.onresize = rs; rs();
-      
-      // Hex Grid Logic
+      const c = el('hex-canvas'); const x = c.getContext('2d'); let w,h;
+      const rs = () => { w=c.width=innerWidth; h=c.height=innerHeight; }; window.onresize = rs; rs();
       const draw = () => {
-        x.clearRect(0,0,w,h);
-        x.strokeStyle = "rgba(68, 199, 255, 0.1)";
-        const s = 40;
-        const t = Date.now()*0.0005;
+        x.clearRect(0,0,w,h); x.strokeStyle = "rgba(68, 199, 255, 0.1)";
+        const s = 40; const t = Date.now()*0.0005;
         for(let cy=0; cy<h+s; cy+=s*0.86) {
            for(let cx=0; cx<w+s; cx+=s*3) {
-             const off = (Math.floor(cy/(s*0.86))%2)*s*1.5;
-             const px = cx + off;
+             const off = (Math.floor(cy/(s*0.86))%2)*s*1.5; const px = cx + off;
              const a = (Math.sin(px*0.01 + t) + 1) * 0.1;
              x.fillStyle = `rgba(68, 199, 255, ${a})`;
-             x.beginPath();
-             for(let i=0; i<6; i++) x.lineTo(px + s*Math.cos(i*Math.PI/3), cy + s*Math.sin(i*Math.PI/3));
+             x.beginPath(); for(let i=0; i<6; i++) x.lineTo(px + s*Math.cos(i*Math.PI/3), cy + s*Math.sin(i*Math.PI/3));
              x.fill(); x.stroke();
            }
         }
@@ -844,13 +793,8 @@
     
     function initTilt() {
       const t = el('tilt-target');
-      document.onmousemove = e => {
-         const x = (e.clientX/innerWidth - 0.5) * 1; // deg
-         const y = (e.clientY/innerHeight - 0.5) * 1;
-         t.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
-      };
+      document.onmousemove = e => { const x = (e.clientX/innerWidth - 0.5) * 1; const y = (e.clientY/innerHeight - 0.5) * 1; t.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`; };
     }
-
   </script>
 </body>
 </html>
