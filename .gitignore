@@ -1,0 +1,42 @@
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Node / tooling (if used later)
+node_modules/
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+package-lock.json
+
+# Build / cache directories
+dist/
+build/
+.cache/
+.tmp/
+coverage/
+
+# Logs
+*.log
+
+# Environment files (for any future tooling/PWA build)
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Editor / IDE settings
+.vscode/
+.idea/
+.history/
+*.swp
+*.swo
+
+# macOS metadata in subfolders
+**/.DS_Store
+
+# Temporary exports / bundles
+*.zip
+*.tar
+*.tar.gz

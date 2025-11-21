@@ -1,0 +1,16 @@
+{
+  "description": "Offline-first No Man’s Sky name & text styling workbench with authentic HUD skin, icon packs, presets, JSON packs, and PWA-capable single-file delivery.",
+  "homepage": "https://shroomtop.github.io/NMS-Text-Styler/",
+  "topics": [
+    "no-mans-sky",
+    "text-styling",
+    "name-generator",
+    "game-tools",
+    "hud",
+    "offline-first",
+    "pwa",
+    "single-file-app",
+    "vanilla-js",
+    "webapp"
+  ]
+}

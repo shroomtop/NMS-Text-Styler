@@ -1,0 +1,6 @@
+[![CI](https://github.com/shroomtop/NMS-Text-Styler/actions/workflows/nms-text-styler-ci.yml/badge.svg)](https://github.com/shroomtop/NMS-Text-Styler/actions/workflows/nms-text-styler-ci.yml)
+[![Live demo](https://img.shields.io/website?url=https%3A%2F%2Fshroomtop.github.io%2FNMS-Text-Styler%2F&label=demo)](https://shroomtop.github.io/NMS-Text-Styler/)
+[![License: MIT](https://img.shields.io/github/license/shroomtop/NMS-Text-Styler)](LICENSE)
+[![Top language](https://img.shields.io/github/languages/top/shroomtop/NMS-Text-Styler)](https://github.com/shroomtop/NMS-Text-Styler/search?l=html)
+[![Code size](https://img.shields.io/github/languages/code-size/shroomtop/NMS-Text-Styler)](https://github.com/shroomtop/NMS-Text-Styler)
+[![Last commit](https://img.shields.io/github/last-commit/shroomtop/NMS-Text-Styler)](https://github.com/shroomtop/NMS-Text-Styler/commits/main)

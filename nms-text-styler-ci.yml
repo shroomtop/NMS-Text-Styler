@@ -1,0 +1,35 @@
+name: NMS Text Styler CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  lint-and-validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Lint index.html with html-validate
+        run: |
+          npx --yes html-validate@^8 "index.html"
+
+      - name: Validate JSON files
+        run: |
+          python -m json.tool manifest.webmanifest > /dev/null
+          python -m json.tool sample-pack.json > /dev/null
+          python -m json.tool smoke.test.json > /dev/null
+
+      - name: Check service worker syntax
+        run: |
+          node --check sw.js
